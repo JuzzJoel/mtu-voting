@@ -29,21 +29,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "font-semibold rounded-md transition-all duration-fast font-heading flex items-center justify-center gap-2 relative overflow-hidden";
+      "font-semibold rounded-md transition-all duration-fast font-sans flex items-center justify-center gap-2 relative overflow-hidden";
 
     const sizeStyles = {
       sm: "px-4 py-2 text-body-sm h-10",
       md: "px-6 py-3 text-body-md h-12",
-      lg: "px-8 py-4 text-body-lg h-52px",
+      lg: "px-8 py-4 text-body-lg h-[52px]",
     };
 
     const variantStyles = {
       primary:
-        "bg-primary-green text-white hover:shadow-glow-purple-xl hover:bg-primary-green/90 hover:scale-105 border border-transparent",
+        "bg-gradient-to-r from-primary-green to-primary-purple text-white hover:shadow-glow-purple-xl hover:scale-[1.02] border border-transparent",
       secondary:
-        "bg-transparent border-2 border-primary-purple text-primary-purple hover:bg-primary-purple/10 hover:border-accent-violet",
+        "bg-transparent border border-white/20 text-white hover:bg-white/10 hover:border-white/40",
       tertiary:
-        "bg-neutral-surface-dark/50 border border-neutral-border text-neutral-text-primary hover:bg-neutral-surface-dark hover:border-primary-purple",
+        "bg-neutral-surface-dark/80 border border-neutral-border text-neutral-text-primary hover:bg-neutral-card-dark hover:border-primary-purple/60",
       ghost:
         "bg-transparent text-neutral-text-primary hover:text-primary-green border-none",
     };

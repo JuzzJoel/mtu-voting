@@ -1,6 +1,10 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { ReactNode } from "react";
+import { Inter } from "next/font/google";
+import Providers from "./providers";
+
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "MTU Voting",
@@ -9,14 +13,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        <main className="min-h-screen">{children}</main>
-        <footer className="w-full text-center py-8 relative z-50 border-t border-white/5">
-          <p className="text-body-sm text-neutral-text-secondary font-medium">
-            Created by <a href="https://github.com/JuzzJoel" target="_blank" rel="noopener noreferrer" className="text-primary-green hover:text-primary-green/80 font-bold transition-colors tracking-wide">AMANI</a>
-          </p>
-        </footer>
+    <html lang="en" className={inter.variable}>
+      <body className="font-sans">
+        <Providers>
+          <main className="min-h-screen">{children}</main>
+          <footer className="w-full text-center py-10 relative z-50 border-t border-white/5">
+            <p className="text-body-sm text-neutral-text-secondary font-medium">
+              Mountain Top University • Secure Voting Experience
+            </p>
+          </footer>
+        </Providers>
       </body>
     </html>
   );

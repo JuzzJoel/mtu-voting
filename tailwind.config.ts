@@ -8,35 +8,35 @@ const config: Config = {
       colors: {
         // Primary Colors - Green + Purple
         primary: {
-          green: "#16C47F",
-          "green-deep": "#0E9F6E",
-          purple: "#7C3AED",
-          "purple-deep": "#5B21B6",
+          green: "#14B8A6",
+          "green-deep": "#0F766E",
+          purple: "#6366F1",
+          "purple-deep": "#4338CA",
         },
         // Accent Colors
         accent: {
           lime: "#A3E635",
-          violet: "#A855F7",
-          mint: "#34D399",
-          gold: "#FACC15",
+          violet: "#8B5CF6",
+          mint: "#2DD4BF",
+          gold: "#F59E0B",
           red: "#F43F5E",
         },
         // Neutral Colors
         neutral: {
-          "bg-dark": "#F3F0F8",
-          "surface-dark": "#FFFFFF",
-          "card-dark": "#FAF8FC",
-          "bg-light": "#0B0F19",
+          "bg-dark": "#0B1120",
+          "surface-dark": "#0F172A",
+          "card-dark": "#111C33",
+          "bg-light": "#0B1120",
           "surface-light": "#111827",
-          "border": "#E9E3F0",
-          "text-primary": "#1A1025",
-          "text-secondary": "#4A3E59",
+          "border": "#1F2A44",
+          "text-primary": "#F8FAFC",
+          "text-secondary": "#CBD5F5",
         },
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        display: ["Space Grotesk", "sans-serif"],
-        heading: ["Sora", "sans-serif"],
+        sans: ["var(--font-inter)", "Inter", "sans-serif"],
+        display: ["var(--font-inter)", "Inter", "sans-serif"],
+        heading: ["var(--font-inter)", "Inter", "sans-serif"],
       },
       fontSize: {
         "display-xl": ["64px", { lineHeight: "1.2", fontWeight: "700" }],
@@ -56,10 +56,10 @@ const config: Config = {
         xl: "28px",
       },
       boxShadow: {
-        card: "0 8px 30px rgba(0, 0, 0, 0.25)",
-        "glow-purple": "0 0 24px rgba(124, 58, 237, 0.35)",
-        "glow-purple-xl": "0 0 30px rgba(124, 58, 237, 0.35)",
-        "glow-green": "0 0 24px rgba(22, 196, 127, 0.35)",
+        card: "0 18px 50px rgba(2, 6, 23, 0.45)",
+        "glow-purple": "0 0 24px rgba(99, 102, 241, 0.35)",
+        "glow-purple-xl": "0 0 40px rgba(99, 102, 241, 0.4)",
+        "glow-green": "0 0 26px rgba(20, 184, 166, 0.4)",
       },
       animation: {
         "pulse-border": "pulse-border 2s ease-in-out infinite",
@@ -96,9 +96,9 @@ const config: Config = {
         },
       },
       backgroundImage: {
-        "gradient-hero": "linear-gradient(135deg, #16C47F 0%, #7C3AED 100%)",
-        "gradient-cta": "linear-gradient(90deg, #16C47F, #A855F7)",
-        "gradient-mesh": "radial-gradient(at 20% 50%, rgba(22, 196, 127, 0.1) 0px, transparent 50%), radial-gradient(at 80% 80%, rgba(124, 58, 237, 0.1) 0px, transparent 50%)",
+        "gradient-hero": "linear-gradient(135deg, #14B8A6 0%, #6366F1 100%)",
+        "gradient-cta": "linear-gradient(90deg, #14B8A6, #8B5CF6)",
+        "gradient-mesh": "radial-gradient(at 20% 20%, rgba(20, 184, 166, 0.25) 0px, transparent 55%), radial-gradient(at 80% 10%, rgba(99, 102, 241, 0.18) 0px, transparent 50%), radial-gradient(at 50% 80%, rgba(56, 189, 248, 0.12) 0px, transparent 60%)",
       },
       transitionDuration: {
         "fast": "200ms",
