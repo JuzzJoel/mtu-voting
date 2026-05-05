@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  role        UserRole  @default(STUDENT)
+  name        String?
+  level       String?
+  department  String?
+  isOnboarded Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  otpRequests OtpCode[]
+  votes       Vote[]
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpHash   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Category {
+  id          String       @id @default(cuid())
+  title       String       @unique
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  contestants Contestant[]
+  votes       Vote[]
+}
+
+model Contestant {
+  id         String    @id @default(cuid())
+  categoryId String
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name       String
+  imageUrl   String
+  createdAt  DateTime  @default(now())
+  votes      Vote[]
+
+  @@index([categoryId])
+  @@unique([categoryId, name])
+}
+
+model Vote {
+  id           String     @id @default(cuid())
+  userId       String
+  categoryId   String
+  contestantId String
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  contestant   Contestant @relation(fields: [contestantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+  @@index([contestantId, categoryId])
+}

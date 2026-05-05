@@ -1,0 +1,55 @@
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mtu-voting-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mtu_voting
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mtu-voting-network
+
+  # Optional: Include the Node.js app for full local development
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mtu-voting-app
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/mtu_voting?schema=public"
+      JWT_SECRET: "change-me-super-long-random-secret-with-32-plus-chars"
+      APP_ORIGIN: "http://localhost:3000"
+      UPSTASH_REDIS_REST_URL: "https://open-mullet-114372.upstash.io"
+      UPSTASH_REDIS_REST_TOKEN: "gQAAAAAAAb7EAAIgcDJmODI3NzY4ZWY2NjY0ZmVlYTM1NDY0OGMzYTRhYmYyMQ"
+      SMTP_HOST: "sandbox.smtp.mailtrap.io"
+      SMTP_PORT: "2525"
+      SMTP_SECURE: "false"
+      SMTP_USER: "b358a5ee3f4203"
+      SMTP_PASS: "da3d4897f1f1fe"
+      SMTP_FROM: "noreply@mtu.edu.ng"
+      HOSTNAME: "0.0.0.0"  # ADD THIS LINE
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mtu-voting-network
+    command: sh -c "npx prisma db push && npm run dev"
+
+volumes:
+  postgres_data:
+
+networks:
+  mtu-voting-network:
+    driver: bridge
