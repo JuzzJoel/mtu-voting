@@ -4,6 +4,7 @@ import { env } from "@/lib/env";
 import { prisma } from "@/lib/db/prisma";
 import { enforceCsrf } from "@/lib/security/csrf";
 import { requestOtpSchema, mtuEmailRegex } from "@/lib/security/validators";
+import { isAdminEmail } from "@/lib/auth/admin";
 import { otpLimiter } from "@/lib/security/rate-limit";
 import { sendOtpEmail } from "@/lib/mail/send-otp";
 import { generateOtpCode } from "@/lib/auth/otp";
@@ -41,8 +42,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const isAdminEmail = !!env.ADMIN_EMAIL && email === env.ADMIN_EMAIL;
-  if (!mtuEmailRegex.test(email) && !isAdminEmail) {
+  const isAdmin = isAdminEmail(email);
+  if (!mtuEmailRegex.test(email) && !isAdmin) {
     return NextResponse.json(
       { error: "Only mtu.edu.ng email addresses are allowed." },
       { status: 400, headers: corsHeaders(req) }
@@ -68,10 +69,10 @@ export async function POST(req: NextRequest) {
   try {
     const user = await prisma.user.upsert({
       where: { email },
-      update: isAdminEmail ? { role: "ADMIN" } : {},
+      update: isAdmin ? { role: "ADMIN" } : {},
       create: {
         email,
-        role: isAdminEmail ? "ADMIN" : "STUDENT"
+        role: isAdmin ? "ADMIN" : "STUDENT"
       }
     });
 

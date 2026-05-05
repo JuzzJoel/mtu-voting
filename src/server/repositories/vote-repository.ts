@@ -1,11 +1,11 @@
-import { prisma } from "@/lib/db/prisma";
+import { prisma } from '@/lib/db/prisma'
 
 export async function getVotedCategoryIds(userId: string) {
   const voted = await prisma.vote.findMany({
     where: { userId },
-    select: { categoryId: true }
-  });
-  return voted.map((row) => row.categoryId);
+    select: { categoryId: true },
+  })
+  return voted.map((row) => row.categoryId)
 }
 
 export async function createVotesInTransaction(
@@ -16,17 +16,17 @@ export async function createVotesInTransaction(
     for (const vote of votes) {
       const nominee = await tx.contestant.findFirst({
         where: { id: vote.nomineeId, categoryId: vote.categoryId },
-        select: { id: true }
-      });
-      if (!nominee) throw new Error("INVALID_NOMINEE");
+        select: { id: true },
+      })
+      if (!nominee) throw new Error('INVALID_NOMINEE')
 
       await tx.vote.create({
         data: {
           userId,
           categoryId: vote.categoryId,
-          contestantId: vote.nomineeId
-        }
-      });
+          contestantId: vote.nomineeId,
+        },
+      })
     }
-  });
+  })
 }

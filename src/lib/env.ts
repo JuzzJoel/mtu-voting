@@ -16,7 +16,14 @@ const envSchema = z.object({
   SMTP_FROM: z.string().min(1, "SMTP_FROM is required"),
   UPSTASH_REDIS_REST_URL: z.string().url("UPSTASH_REDIS_REST_URL must be a valid URL"),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
-  ADMIN_EMAIL: z.string().email().optional()
+  ADMIN_EMAIL: z.string().email().optional(),
+  ADMIN_EMAILS: z.string().optional(),
+  S3_REGION: z.string().optional(),
+  S3_BUCKET: z.string().optional(),
+  S3_ACCESS_KEY_ID: z.string().optional(),
+  S3_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_ENDPOINT: z.string().optional(),
+  S3_PUBLIC_BASE_URL: z.string().optional()
 });
 
 // Lazy validate only when env is accessed
