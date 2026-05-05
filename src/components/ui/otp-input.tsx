@@ -83,7 +83,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
           transition={{ duration: 0.15, delay: index * 0.03 }}
           className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16
                      text-center text-xl sm:text-2xl md:text-3xl font-bold
-                     bg-neutral-card-dark border-2 border-neutral-border rounded-lg
+                     bg-neutral-card-dark border-2 border-neutral-border/70 rounded-lg
                      focus:outline-none focus:ring-2 focus:ring-primary-purple/50 focus:border-primary-purple
                      transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
                      [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

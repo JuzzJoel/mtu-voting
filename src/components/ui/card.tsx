@@ -23,15 +23,15 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     ref
   ) => {
     const baseStyles =
-      "rounded-lg border transition-all duration-fast overflow-hidden";
+      "rounded-2xl border transition-all duration-fast overflow-hidden";
 
     const variantStyles = {
       default:
-        "bg-neutral-card-dark border-neutral-border shadow-card",
+        "bg-neutral-card-dark border-neutral-border/70 shadow-card",
       glass:
-        "bg-white/10 backdrop-blur-glass border border-white/20 shadow-lg",
+        "bg-white/5 backdrop-blur-glass border border-white/15 shadow-lg",
       dark:
-        "bg-neutral-surface-dark border-neutral-border/50",
+        "bg-neutral-surface-dark/90 border-neutral-border/60",
     };
 
     const glowStyles = {
@@ -64,7 +64,7 @@ export const CardHeader = ({
   className = "",
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`px-6 py-4 border-b border-neutral-border/50 ${className}`} {...props} />
+  <div className={`px-6 py-4 border-b border-white/5 ${className}`} {...props} />
 );
 
 export const CardContent = ({
@@ -79,7 +79,7 @@ export const CardFooter = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={`px-6 py-3 bg-neutral-surface-dark/50 border-t border-neutral-border/50 flex items-center gap-3 ${className}`}
+    className={`px-6 py-3 bg-neutral-surface-dark/70 border-t border-white/5 flex items-center gap-3 ${className}`}
     {...props}
   />
 );

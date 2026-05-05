@@ -38,12 +38,12 @@ export const ContestantCard: React.FC<ContestantCardProps> = ({
         interactive
         glow={isSelected ? "green" : "none"}
         variant="glass"
-        className={`relative overflow-hidden transition-all duration-fast ${
-          isSelected ? "ring-2 ring-primary-green" : ""
-        } ${hasVoted ? "opacity-60" : ""}`}
+        className={`relative overflow-hidden transition-all duration-fast border ${
+          isSelected ? "border-primary-green shadow-glow-green" : "border-white/10"
+        } ${hasVoted ? "opacity-70" : ""}`}
       >
         {/* Image */}
-        <div className="relative w-full h-48 bg-gradient-to-br from-primary-green/20 to-primary-purple/20 overflow-hidden">
+        <div className="relative w-full h-52 bg-gradient-to-br from-primary-green/20 to-primary-purple/20 overflow-hidden">
           {image ? (
             <img
               src={image}
@@ -64,7 +64,7 @@ export const ContestantCard: React.FC<ContestantCardProps> = ({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute top-3 right-3 bg-primary-green text-white rounded-full p-2 text-xl"
+              className="absolute top-3 right-3 bg-primary-green text-white rounded-full p-2 text-xl shadow-lg"
             >
               ✓
             </motion.div>
@@ -93,7 +93,7 @@ export const ContestantCard: React.FC<ContestantCardProps> = ({
 
         {/* Content */}
         <CardContent className="pt-4">
-          <h3 className="text-h3 font-bold text-neutral-text-primary mb-1">
+          <h3 className="text-h3 font-semibold text-neutral-text-primary mb-1">
             {name}
           </h3>
           <p className="text-body-sm text-neutral-text-secondary mb-4">

@@ -23,7 +23,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const baseStyles =
-      "w-full rounded-md border transition-all duration-fast font-body-md";
+      "w-full rounded-md border transition-all duration-fast text-body-md";
 
     const focusStyles = "focus:outline-none focus:ring-4 focus:ring-primary-purple/25 focus:border-primary-purple";
 
