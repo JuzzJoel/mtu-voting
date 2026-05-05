@@ -2,32 +2,40 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { requireUser } from "@/lib/auth/guards";
-import { voteSchema } from "@/lib/security/validators";
+import { voteBatchSchema } from "@/lib/security/validators";
 import { enforceCsrf } from "@/lib/security/csrf";
 
 export async function POST(req: NextRequest) {
   try {
     await enforceCsrf(req);
     const user = await requireUser(req);
-    const body = voteSchema.parse(await req.json());
+    const body = voteBatchSchema.parse(await req.json());
+    const { votes } = body;
+
+    const uniqueCategories = new Set(votes.map((vote) => vote.categoryId));
+    if (uniqueCategories.size !== votes.length) {
+      return NextResponse.json({ error: "Duplicate category votes detected." }, { status: 400 });
+    }
 
     await prisma.$transaction(async (tx) => {
-      const contestant = await tx.contestant.findFirst({
-        where: {
-          id: body.contestantId,
-          categoryId: body.categoryId
-        },
-        select: { id: true }
-      });
-      if (!contestant) throw new Error("INVALID_CONTESTANT");
+      for (const vote of votes) {
+        const contestant = await tx.contestant.findFirst({
+          where: {
+            id: vote.contestantId,
+            categoryId: vote.categoryId
+          },
+          select: { id: true }
+        });
+        if (!contestant) throw new Error("INVALID_CONTESTANT");
 
-      await tx.vote.create({
-        data: {
-          userId: user.id,
-          categoryId: body.categoryId,
-          contestantId: body.contestantId
-        }
-      });
+        await tx.vote.create({
+          data: {
+            userId: user.id,
+            categoryId: vote.categoryId,
+            contestantId: vote.contestantId
+          }
+        });
+      }
     });
 
     return NextResponse.json({ ok: true });

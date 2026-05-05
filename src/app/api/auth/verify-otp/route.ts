@@ -72,10 +72,7 @@ export async function POST(req: NextRequest) {
 
     await createSession({ userId: user.id, email: user.email, role: user.role });
 
-    let nextRoute = "/onboarding";
-    if (user.isOnboarded) {
-      nextRoute = user.role === "ADMIN" ? "/admin/dashboard" : "/vote";
-    }
+    const nextRoute = user.role === "ADMIN" ? "/admin/dashboard" : "/vote";
 
     return NextResponse.json(
       { ok: true, nextRoute },

@@ -21,3 +21,7 @@ export const voteSchema = z.object({
   categoryId: z.string().min(1),
   contestantId: z.string().min(1)
 });
+
+export const voteBatchSchema = z.object({
+  votes: z.array(voteSchema).min(1)
+});
