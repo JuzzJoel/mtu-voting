@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAdmin } from "@/lib/auth/guards";
 
+export const dynamic = 'force-dynamic' // ✅ add this
+export const revalidate = 0
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
