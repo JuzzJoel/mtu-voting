@@ -2,29 +2,34 @@ import {
   createNominee,
   deleteNominee,
   listNominees,
-  updateNominee
-} from "@/server/repositories/admin-nominee-repository";
+  updateNominee,
+} from '@/server/repositories/admin-nominee-repository'
 
 export function getAdminNominees() {
-  return listNominees();
+  return listNominees()
 }
 
 export function createAdminNominee(input: {
-  name: string;
-  categoryId: string;
-  imageUrl: string;
-  description?: string | null;
+  name: string
+  categoryId: string
+  imageUrl: string
+  description?: string | null
 }) {
-  return createNominee(input);
+  return createNominee(input)
 }
 
 export function updateAdminNominee(
   id: string,
-  input: { name?: string; categoryId?: string; imageUrl?: string; description?: string | null }
+  input: {
+    name?: string
+    categoryId?: string
+    imageUrl?: string
+    description?: string | null
+  }
 ) {
-  return updateNominee(id, input);
+  return updateNominee(id, input)
 }
 
 export function deleteAdminNominee(id: string) {
-  return deleteNominee(id);
+  return deleteNominee(id)
 }
