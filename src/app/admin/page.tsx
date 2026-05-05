@@ -35,6 +35,7 @@ export default function AdminPage() {
   const [categoryTitle, setCategoryTitle] = useState("");
   const [categoryOrder, setCategoryOrder] = useState(0);
   const [categoryActive, setCategoryActive] = useState(true);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   const [nomineeName, setNomineeName] = useState("");
   const [nomineeCategoryId, setNomineeCategoryId] = useState("");
@@ -66,6 +67,13 @@ export default function AdminPage() {
     setEditingNomineeId(null);
   };
 
+  const resetCategoryForm = () => {
+    setCategoryTitle("");
+    setCategoryOrder(0);
+    setCategoryActive(true);
+    setEditingCategoryId(null);
+  };
+
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -89,6 +97,24 @@ export default function AdminPage() {
       showToast("Category created successfully.", "success");
     },
     onError: () => showToast("Could not create category.", "error")
+  });
+
+  const updateCategory = useMutation({
+    mutationFn: async (categoryId: string) => {
+      const res = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: categoryTitle.trim(), order: categoryOrder, isActive: categoryActive })
+      });
+      if (!res.ok) throw new Error("Failed to update category");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      resetCategoryForm();
+      showToast("Category updated.", "success");
+    },
+    onError: () => showToast("Could not update category.", "error")
   });
 
   const deleteCategory = useMutation({
@@ -216,7 +242,7 @@ export default function AdminPage() {
 
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
         <Card variant="glass" className="p-6">
-          <h2 className="text-h2 text-white mb-4">Create Category</h2>
+          <h2 className="text-h2 text-white mb-4">{editingCategoryId ? "Edit Category" : "Create Category"}</h2>
           <div className="space-y-4">
             <Input
               label="Category name"
@@ -243,12 +269,23 @@ export default function AdminPage() {
             </div>
             <Button
               size="lg"
-              onClick={() => createCategory.mutate()}
-              disabled={!categoryTitle.trim() || createCategory.isPending}
-              isLoading={createCategory.isPending}
+              onClick={() => {
+                if (editingCategoryId) {
+                  updateCategory.mutate(editingCategoryId);
+                } else {
+                  createCategory.mutate();
+                }
+              }}
+              disabled={!categoryTitle.trim() || createCategory.isPending || updateCategory.isPending}
+              isLoading={createCategory.isPending || updateCategory.isPending}
             >
-              Add Category
+              {editingCategoryId ? "Save Category" : "Add Category"}
             </Button>
+            {editingCategoryId && (
+              <Button variant="secondary" size="lg" onClick={resetCategoryForm}>
+                Cancel
+              </Button>
+            )}
           </div>
         </Card>
 
@@ -263,15 +300,32 @@ export default function AdminPage() {
                   <div>
                     <p className="text-body-md text-white font-semibold">{category.title}</p>
                     <p className="text-body-sm text-neutral-text-secondary">Order {category.order}</p>
+                    <p className="text-body-sm text-neutral-text-secondary">
+                      {category.isActive ? "Active" : "Inactive"}
+                    </p>
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => deleteCategory.mutate(category.id)}
-                    disabled={deleteCategory.isPending}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setEditingCategoryId(category.id);
+                        setCategoryTitle(category.title);
+                        setCategoryOrder(category.order);
+                        setCategoryActive(category.isActive);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => deleteCategory.mutate(category.id)}
+                      disabled={deleteCategory.isPending}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               ))}
               {categories.length === 0 && (
@@ -328,6 +382,21 @@ export default function AdminPage() {
                 }}
               />
             </label>
+            {nomineePreview && (
+              <div className="flex items-center justify-between text-body-sm text-neutral-text-secondary">
+                <span>Preview ready</span>
+                <button
+                  type="button"
+                  className="text-primary-green hover:text-primary-green/80"
+                  onClick={() => {
+                    setNomineeFile(null);
+                    setNomineePreview(null);
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+            )}
             {nomineePreview && (
               <div className="rounded-lg overflow-hidden border border-white/10">
                 <Image
