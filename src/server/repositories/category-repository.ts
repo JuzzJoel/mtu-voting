@@ -19,6 +19,6 @@ export async function getActiveCategories(excludedCategoryIds: string[]) {
         select: { id: true, name: true, imageUrl: true },
       },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { order: 'asc' },
   }) as Promise<CategoryRecord[]>
 }
