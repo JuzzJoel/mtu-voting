@@ -1,45 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/db/prisma'
 import { requireUser } from '@/lib/auth/guards'
 import { voteBatchSchema } from '@/lib/security/validators'
 import { enforceCsrf } from '@/lib/security/csrf'
+import { submitVotes } from '@/server/services/vote-service'
 
 export async function POST(req: NextRequest) {
   try {
     await enforceCsrf(req)
     const user = await requireUser(req)
     const body = voteBatchSchema.parse(await req.json())
-    const { votes } = body
-
-    const uniqueCategories = new Set(votes.map((vote) => vote.categoryId))
-    if (uniqueCategories.size !== votes.length) {
-      return NextResponse.json(
-        { error: 'Duplicate category votes detected.' },
-        { status: 400 }
-      )
-    }
-
-    await prisma.$transaction(async (tx) => {
-      for (const vote of votes) {
-        const contestant = await tx.contestant.findFirst({
-          where: {
-            id: vote.contestantId,
-            categoryId: vote.categoryId,
-          },
-          select: { id: true },
-        })
-        if (!contestant) throw new Error('INVALID_CONTESTANT')
-
-        await tx.vote.create({
-          data: {
-            userId: user.id,
-            categoryId: vote.categoryId,
-            contestantId: vote.contestantId,
-          },
-        })
-      }
-    })
+    await submitVotes(
+      user.id,
+      body.votes.map((vote) => ({
+        categoryId: vote.categoryId,
+        nomineeId: vote.contestantId,
+      }))
+    )
 
     return NextResponse.json({ ok: true })
   } catch (error) {
@@ -52,9 +29,15 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       )
     }
-    if (error instanceof Error && error.message === 'INVALID_CONTESTANT') {
+    if (error instanceof Error && error.message === 'INVALID_NOMINEE') {
       return NextResponse.json(
         { error: 'Contestant/category mismatch.' },
+        { status: 400 }
+      )
+    }
+    if (error instanceof Error && error.message === 'DUPLICATE_CATEGORY') {
+      return NextResponse.json(
+        { error: 'Duplicate category votes detected.' },
         { status: 400 }
       )
     }

@@ -8,18 +8,16 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button, Card } from "@/components/ui";
 import { useVotingStore } from "@/stores/voting-store";
 
-type Contestant = { id: string; name: string; imageUrl: string; description?: string | null };
+type Nominee = { id: string; name: string; imageUrl: string };
 
-type Category = { id: string; title: string; contestants: Contestant[] };
-
-type CategoriesResponse = { categories: Category[] };
+type Category = { id: string; name: string; order: number; nominees: Nominee[] };
 
 type VotePayload = { categoryId: string; contestantId: string };
 
-const fetchCategories = async (): Promise<CategoriesResponse> => {
-  const res = await fetch("/api/categories/available");
+const fetchCategories = async (): Promise<Category[]> => {
+  const res = await fetch("/api/categories");
   if (!res.ok) throw new Error("Failed to load categories");
-  return (await res.json()) as CategoriesResponse;
+  return (await res.json()) as Category[];
 };
 
 const fetchCsrfToken = async () => {
@@ -39,7 +37,7 @@ export default function VotePage() {
     queryFn: fetchCategories
   });
 
-  const categories = data?.categories ?? [];
+  const categories = useMemo(() => data ?? [], [data]);
   const totalCategories = categories.length;
 
   const progressTotal = totalCategories + 1;
@@ -58,7 +56,7 @@ export default function VotePage() {
     mutationFn: async (votes: VotePayload[]) => {
       const csrf = await fetchCsrfToken();
       if (!csrf) throw new Error("Missing CSRF token");
-      const res = await fetch("/api/votes", {
+      const res = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
         body: JSON.stringify({ votes })
@@ -158,11 +156,11 @@ export default function VotePage() {
                     <div className="space-y-4">
                       {categories.map((category) => {
                         const choiceId = selected[category.id];
-                        const choice = category.contestants.find((contestant) => contestant.id === choiceId);
+                        const choice = category.nominees.find((contestant) => contestant.id === choiceId);
                         return (
                           <div key={category.id} className="flex items-center justify-between gap-4 border border-white/10 rounded-xl p-4">
                             <div>
-                              <p className="text-body-sm text-neutral-text-secondary">{category.title}</p>
+                              <p className="text-body-sm text-neutral-text-secondary">{category.name}</p>
                               <p className="text-body-md text-white font-semibold">{choice?.name ?? "Not selected"}</p>
                             </div>
                             <Button variant="secondary" size="sm" onClick={() => {
@@ -204,13 +202,13 @@ export default function VotePage() {
                     <div className="flex items-start justify-between gap-6">
                       <div>
                         <p className="text-body-sm text-neutral-text-secondary">Category</p>
-                        <h2 className="text-h2 text-white">{currentCategory.title}</h2>
+                        <h2 className="text-h2 text-white">{currentCategory.name}</h2>
                       </div>
                       <div className="text-body-sm text-neutral-text-secondary">{currentIndex + 1} / {totalCategories}</div>
                     </div>
 
                     <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {currentCategory.contestants.map((contestant) => {
+                      {currentCategory.nominees.map((contestant) => {
                         const isSelected = selected[currentCategory.id] === contestant.id;
                         return (
                           <motion.button
@@ -238,9 +236,6 @@ export default function VotePage() {
                             </div>
                             <div className="p-4">
                               <h3 className="text-body-md text-white font-semibold">{contestant.name}</h3>
-                              {contestant.description && (
-                                <p className="text-body-sm text-neutral-text-secondary mt-2">{contestant.description}</p>
-                              )}
                             </div>
                           </motion.button>
                         );
