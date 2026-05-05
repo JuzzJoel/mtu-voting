@@ -70,7 +70,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
           {/* Info */}
           <div className="mt-6 p-4 rounded-lg bg-primary-green/10 border border-primary-green/30">
             <p className="text-body-sm text-neutral-text-secondary">
-              📧 We'll send a one-time password to your email. No password needed!
+              📧 We&apos;ll send a one-time password to your email. No password needed!
             </p>
           </div>
         </div>

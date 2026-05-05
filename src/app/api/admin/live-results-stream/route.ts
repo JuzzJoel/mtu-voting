@@ -18,8 +18,6 @@ export async function GET(req: NextRequest) {
 
     // Create a readable stream for SSE
     const encoder = new TextEncoder();
-    let lastUpdate = Date.now();
-
     const customReadable = new ReadableStream({
       async start(controller) {
         const send = (data: unknown) => {

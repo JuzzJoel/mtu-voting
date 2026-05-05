@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { env } from '@/lib/env'
 import { prisma } from '@/lib/db/prisma'
 import { enforceCsrf } from '@/lib/security/csrf'
 import { requestOtpSchema, mtuEmailRegex } from '@/lib/security/validators'

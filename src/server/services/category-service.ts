@@ -12,10 +12,10 @@ export async function listCategoriesForUser(userId: string) {
   const votedCategoryIds = await getVotedCategoryIds(userId)
   const categories = await getActiveCategories(votedCategoryIds)
 
-  return categories.map((category, index) => ({
+  return categories.map((category) => ({
     id: category.id,
     name: category.title,
-    order: index + 1,
+    order: category.order,
     nominees: category.contestants.map((contestant) => ({
       id: contestant.id,
       name: contestant.name,

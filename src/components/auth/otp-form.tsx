@@ -113,7 +113,7 @@ export const OTPForm: React.FC<OTPFormProps> = ({ email, onSubmit, onBack }) => 
                 onClick={() => setResendCountdown(60)}
                 className="w-full text-body-sm text-primary-green hover:text-primary-green/80 font-semibold transition-colors"
               >
-                Didn't receive code? Resend
+                Didn&apos;t receive code? Resend
               </button>
             )}
 

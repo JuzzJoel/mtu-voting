@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db/prisma'
 export type CategoryRecord = {
   id: string
   title: string
+  order: number
   contestants: { id: string; name: string; imageUrl: string }[]
 }
 
