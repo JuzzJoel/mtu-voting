@@ -19,10 +19,21 @@ const envSchema = z.object({
   ADMIN_EMAIL: z.string().email().optional()
 });
 
-const parsed = envSchema.safeParse(process.env);
-if (!parsed.success) {
-  const issues = parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ");
-  throw new Error(`Invalid environment configuration: ${issues}`);
-}
+// Lazy validate only when env is accessed
+let _env: z.infer<typeof envSchema> | null = null;
 
-export const env = parsed.data;
+export const env = new Proxy({} as z.infer<typeof envSchema>, {
+  get(_, prop) {
+    if (!_env) {
+      const parsed = envSchema.safeParse(process.env);
+      if (!parsed.success) {
+        const issues = parsed.error.issues
+          .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+          .join("; ");
+        throw new Error(`Invalid environment configuration: ${issues}`);
+      }
+      _env = parsed.data;
+    }
+    return _env[prop as keyof typeof _env];
+  }
+});
