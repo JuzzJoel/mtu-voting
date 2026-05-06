@@ -14,16 +14,11 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // ── 1. CSRF verification ──────────────────────────────────────────────────
   try {
     enforceCsrf(req)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('[request-otp] CSRF check failed:', message)
     return NextResponse.json(
-      {
-        error: 'Security check failed. Please refresh the page and try again.',
-      },
+      { error: 'Invalid request origin.' },
       { status: 403, headers: corsHeaders(req) }
     )
   }

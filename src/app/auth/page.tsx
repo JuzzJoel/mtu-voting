@@ -8,7 +8,8 @@ import { Button, OTPInput } from "@/components/ui";
 import { mtuEmailRegex } from "@/lib/security/validators";
 import { useAuthStore } from "@/stores/auth-store";
 
-const neutralMessage = "If this email is valid, a verification code has been sent.";
+const BASIC_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 type Step = "email" | "otp";
 
 export default function AuthPage() {
@@ -19,58 +20,42 @@ export default function AuthPage() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [infoMessage, setInfoMessage] = useState("");
   const [error, setError] = useState("");
-  const [csrfToken, setCsrfToken] = useState("");
-  const [touched, setTouched] = useState(false);
 
-  const isEmailValid = useMemo(() => mtuEmailRegex.test(emailInput.trim().toLowerCase()), [emailInput]);
-  const isEmailSubmittable = useMemo(() => emailInput.trim().includes("@") && emailInput.trim().includes("."), [emailInput]);
-  const showEmailError = touched && emailInput.trim().length > 0 && !isEmailValid && !error;
-
-  useEffect(() => {
-    void fetch("/api/auth/csrf")
-      .then((r) => r.json())
-      .then((d: { token?: string }) => { if (d.token) setCsrfToken(d.token); })
-      .catch(() => null);
-  }, []);
+  const isMtuEmail = useMemo(() => mtuEmailRegex.test(emailInput.trim().toLowerCase()), [emailInput]);
+  const isBasicEmail = useMemo(() => BASIC_EMAIL_RE.test(emailInput.trim()), [emailInput]);
+  // Warn about non-MTU emails only when the email is otherwise syntactically valid
+  const showMtuWarning = isBasicEmail && !isMtuEmail && !error;
 
   useEffect(() => { if (!storedEmail) setStep("email"); }, [storedEmail]);
 
-  const ensureCsrf = async () => {
-    if (csrfToken) return csrfToken;
-    const r = await fetch("/api/auth/csrf");
-    const d = (await r.json()) as { token?: string };
-    if (d.token) { setCsrfToken(d.token); return d.token; }
-    return "";
-  };
-
-  const sendOtp = async (email: string) => {
-    const csrf = await ensureCsrf();
-    if (!csrf) throw new Error("Missing CSRF");
-    return fetch("/api/auth/request-otp", {
+  const post = (url: string, body: Record<string, string>) =>
+    fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-      body: JSON.stringify({ email }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
-  };
 
   const requestOtp = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
-    setTouched(true);
-    if (!isEmailSubmittable) return;
+    if (!isBasicEmail) return;
     setLoading(true);
     const email = emailInput.trim().toLowerCase();
     setEmail(email);
     try {
-      const res = await sendOtp(email);
-      if (!res.ok) { setError("We could not send the code. Please try again."); return; }
-      setInfoMessage(neutralMessage);
-      setCsrfToken(""); // force fresh token for verify-otp
+      const res = await post("/api/auth/request-otp", { email });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Failed to send code. Please try again.");
+        return;
+      }
       setStep("otp");
-    } catch { setError("Network error. Please try again."); }
-    finally { setLoading(false); }
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const verifyOtp = async (event?: FormEvent, otpOverride?: string) => {
@@ -80,36 +65,36 @@ export default function AuthPage() {
     setError("");
     setOtpLoading(true);
     try {
-      const csrf = await ensureCsrf();
-      if (!csrf) throw new Error("Missing CSRF");
-      const res = await fetch("/api/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-        body: JSON.stringify({ email: storedEmail, otp: otpValue }),
-      });
+      const res = await post("/api/auth/verify-otp", { email: storedEmail ?? "", otp: otpValue });
       const data = (await res.json()) as { ok?: boolean; error?: string; nextRoute?: string };
-      if (!res.ok) { setError(data.error ?? "Invalid verification code."); return; }
+      if (!res.ok) {
+        setError(data.error ?? "Invalid verification code.");
+        return;
+      }
       router.replace((data.nextRoute ?? "/vote") as Parameters<typeof router.replace>[0]);
-    } catch { setError("Network error. Please try again."); }
-    finally { setOtpLoading(false); }
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   const resendOtp = async () => {
     if (!storedEmail) return;
     setError("");
     try {
-      const res = await sendOtp(storedEmail);
-      if (!res.ok) setError("We could not resend the code.");
-      else { setInfoMessage(neutralMessage); setCsrfToken(""); }
-    } catch { setError("Network error. Please try again."); }
+      const res = await post("/api/auth/request-otp", { email: storedEmail });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok) setError(data.error ?? "Failed to resend code.");
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    }
   };
 
   return (
     <div
-      className="min-h-[calc(100vh-56px)] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden"
-      style={{
-        background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
-      }}
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)" }}
     >
       {/* Dot pattern overlay */}
       <div
@@ -119,7 +104,6 @@ export default function AuthPage() {
           backgroundSize: "28px 28px",
         }}
       />
-
       {/* Glow blobs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none"
         style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
@@ -167,7 +151,7 @@ export default function AuthPage() {
               <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${step === "email" ? "bg-gray-900 text-white" : "bg-green-500 text-white"}`}>
                 {step === "otp" ? (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : "1"}
               </span>
@@ -215,41 +199,36 @@ export default function AuthPage() {
                       type="email"
                       placeholder="you@mtu.edu.ng"
                       value={emailInput}
-                      onChange={(e) => { setEmailInput(e.target.value); setTouched(true); setError(""); }}
+                      onChange={(e) => { setEmailInput(e.target.value); setError(""); }}
                       required
-                      className={`w-full border rounded-lg px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 transition-all duration-150 ${
-                        showEmailError
+                      className={`w-full border px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 transition-all duration-150 ${
+                        showMtuWarning || error
                           ? "border-red-300 bg-red-50 focus:ring-red-100 focus:border-red-400"
                           : "border-gray-200 bg-gray-50 focus:ring-indigo-100 focus:border-indigo-400 focus:bg-white"
                       }`}
                     />
-                    <AnimatePresence>
-                      {showEmailError && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -4 }}
-                          className="text-xs text-red-500 flex items-center gap-1 pt-0.5"
-                        >
-                          Please use your MTU email (@mtu.edu.ng)
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
                   </div>
 
-                  {infoMessage && (
-                    <p className="text-xs text-gray-500 bg-gray-50 border border-gray-100 px-3 py-2.5 rounded-lg">{infoMessage}</p>
-                  )}
-                  {error && (
-                    <p className="text-xs text-red-600 bg-red-50 border border-red-100 px-3 py-2.5 rounded-lg">{error}</p>
-                  )}
+                  <AnimatePresence mode="wait">
+                    {(error || showMtuWarning) && (
+                      <motion.p
+                        key={error || "warning"}
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="text-xs text-red-600 bg-red-50 border border-red-100 px-3 py-2.5 rounded-lg"
+                      >
+                        {error || "Please use your MTU email address (@mtu.edu.ng)"}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
 
                   <Button
                     type="submit"
                     size="lg"
                     className="w-full !rounded-lg"
                     style={{ background: "linear-gradient(135deg, #302b63, #6366f1)", border: "none", color: "white" } as React.CSSProperties}
-                    disabled={!isEmailSubmittable || loading}
+                    disabled={!isBasicEmail || loading}
                     isLoading={loading}
                   >
                     Send Verification Code
@@ -284,9 +263,9 @@ export default function AuthPage() {
                     <AnimatePresence>
                       {error && (
                         <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
                           className="text-xs text-red-600 bg-red-50 border border-red-100 px-3 py-2.5 rounded-lg text-center"
                         >
                           {error}

@@ -3,48 +3,40 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Contestant = {
-  id: string
-  name: string
-  imageUrl: string
-  description?: string | null
-}
-type Category = { id: string; title: string; contestants: Contestant[] }
-
 type VotingState = {
-  categories: Category[]
   selected: Record<string, string>
-  loading: boolean
-  setCategories: (cats: Category[]) => void
+  skipped: Record<string, true>
   setVote: (categoryId: string, contestantId: string) => void
-  clearVote: (categoryId: string) => void
+  setSkip: (categoryId: string) => void
   clearAll: () => void
-  setLoading: (loading: boolean) => void
 }
 
 export const useVotingStore = create<VotingState>()(
   persist(
     (set) => ({
-      categories: [],
       selected: {},
-      loading: false,
-      setCategories: (categories) => set({ categories }),
+      skipped: {},
       setVote: (categoryId, contestantId) =>
         set((state) => ({
           selected: { ...state.selected, [categoryId]: contestantId },
+          // voting on a skipped category un-skips it
+          skipped: Object.fromEntries(
+            Object.entries(state.skipped).filter(([k]) => k !== categoryId)
+          ) as Record<string, true>,
         })),
-      clearVote: (categoryId) =>
+      setSkip: (categoryId) =>
         set((state) => ({
+          skipped: { ...state.skipped, [categoryId]: true },
+          // skipping a voted category removes the vote
           selected: Object.fromEntries(
-            Object.entries(state.selected).filter(([key]) => key !== categoryId)
+            Object.entries(state.selected).filter(([k]) => k !== categoryId)
           ),
         })),
-      clearAll: () => set({ selected: {} }),
-      setLoading: (loading) => set({ loading }),
+      clearAll: () => set({ selected: {}, skipped: {} }),
     }),
     {
       name: 'mtu-votes',
-      partialize: (state) => ({ selected: state.selected }),
+      partialize: (state) => ({ selected: state.selected, skipped: state.skipped }),
     }
   )
 )

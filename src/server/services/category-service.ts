@@ -1,6 +1,5 @@
 import { getActiveCategories } from '@/server/repositories/category-repository'
 import { getVotedCategoryIds } from '@/server/repositories/vote-repository'
-import { syncSanityContent } from '@/server/services/sanity-sync'
 
 export type CategoryResponse = {
   id: string
@@ -15,7 +14,6 @@ export type CategoryResponse = {
 }
 
 export async function listCategoriesForUser(userId: string) {
-  await syncSanityContent()
   const votedCategoryIds = await getVotedCategoryIds(userId)
   const categories = await getActiveCategories(votedCategoryIds)
 

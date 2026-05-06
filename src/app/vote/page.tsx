@@ -8,57 +8,372 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui";
 import { useVotingStore } from "@/stores/voting-store";
 
-type Nominee = { id: string; name: string; imageUrl: string };
+type Nominee = { id: string; name: string; imageUrl: string; description: string | null };
 type Category = { id: string; name: string; order: number; nominees: Nominee[] };
 type VotePayload = { categoryId: string; contestantId: string };
 
-const fetchCategories = async (): Promise<Category[]> => {
+const PAGE_BG = "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)";
+const ACCENT_GRAD = "linear-gradient(135deg, #6366f1, #8b5cf6)";
+const BTN_STYLE = {
+  background: "linear-gradient(135deg, #302b63, #6366f1)",
+  border: "none",
+  color: "white",
+} as React.CSSProperties;
+
+// Glass card style — the main panels
+const GLASS = {
+  background: "rgba(255,255,255,0.05)",
+  backdropFilter: "blur(24px)",
+  WebkitBackdropFilter: "blur(24px)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.45), 0 4px 24px rgba(0,0,0,0.3)",
+} as React.CSSProperties;
+
+async function fetchCategories(): Promise<Category[]> {
   const res = await fetch("/api/categories");
   if (!res.ok) throw new Error("Failed to load categories");
-  return (await res.json()) as Category[];
-};
+  return res.json() as Promise<Category[]>;
+}
 
-const fetchCsrfToken = async () => {
-  const res = await fetch("/api/auth/csrf");
-  const data = (await res.json()) as { token?: string };
-  return data.token ?? "";
-};
+// ── Sidebar status dot ───────────────────────────────────────────────────────
+function StatusDot({ status }: { status: "voted" | "skipped" | "active" | "unvisited" }) {
+  const base: React.CSSProperties = { width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" };
 
+  if (status === "voted")
+    return (
+      <div style={{ ...base, background: ACCENT_GRAD }}>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 5l2.5 2.5 3.5-4" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+    );
+
+  if (status === "skipped")
+    return (
+      <div style={{ ...base, border: "1px solid rgba(255,255,255,0.2)" }}>
+        <div style={{ width: 8, height: 1.5, background: "rgba(255,255,255,0.3)" }} />
+      </div>
+    );
+
+  if (status === "active")
+    return (
+      <div style={{ ...base, border: "2px solid rgba(255,255,255,0.8)" }}>
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "white" }} />
+      </div>
+    );
+
+  return <div style={{ ...base, border: "1px solid rgba(255,255,255,0.1)" }} />;
+}
+
+// ── Category voting panel ─────────────────────────────────────────────────────
+function CategoryPanel({
+  category, index, total, selectedId,
+  onSelect, onNext, onSkip, onBack, canGoBack, isLast,
+}: {
+  category: Category;
+  index: number;
+  total: number;
+  selectedId: string | undefined;
+  onSelect: (id: string) => void;
+  onNext: () => void;
+  onSkip: () => void;
+  onBack: () => void;
+  canGoBack: boolean;
+  isLast: boolean;
+}) {
+  const nominees = category.nominees;
+  // 1–2 nominees: 2 big cols. 3+: 3 cols on sm and up, 2 on mobile.
+  const gridClass = nominees.length <= 2
+    ? "grid grid-cols-2 gap-5"
+    : "grid grid-cols-2 sm:grid-cols-3 gap-4";
+  const wrapperClass = nominees.length <= 2 ? "max-w-md" : "w-full";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 30 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -30 }}
+      transition={{ duration: 0.22 }}
+    >
+      <div style={GLASS}>
+        {/* Header */}
+        <div className="px-7 py-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <p className="font-mono text-[10px] font-medium tracking-widest uppercase mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Category {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold leading-tight" style={{ color: "white" }}>{category.name}</h1>
+              <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>Select one candidate to vote</p>
+            </div>
+            {selectedId && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5"
+                style={{
+                  background: "rgba(99,102,241,0.15)",
+                  border: "1px solid rgba(99,102,241,0.35)",
+                  color: "#a5b4fc",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                  <path d="M1.5 4.5l2 2 4-4" stroke="#a5b4fc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                SELECTED
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        {/* Nominees */}
+        <div className="px-7 py-6">
+          {nominees.length === 0 ? (
+            <p className="text-sm text-center py-12" style={{ color: "rgba(255,255,255,0.3)" }}>No nominees in this category yet.</p>
+          ) : (
+            <div className={wrapperClass}>
+              <div className={gridClass}>
+                {nominees.map((nominee, i) => {
+                  const isSelected = selectedId === nominee.id;
+                  return (
+                    <motion.button
+                      key={nominee.id}
+                      type="button"
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06, duration: 0.22 }}
+                      // No whileHover y-bounce — just a clean shadow lift via CSS
+                      onClick={() => onSelect(nominee.id)}
+                      className="group text-left overflow-hidden focus:outline-none transition-all duration-200"
+                      style={
+                        isSelected
+                          ? { boxShadow: "0 0 0 2px #6366f1, 0 16px 48px rgba(99,102,241,0.25)", transform: "none" }
+                          : { boxShadow: "0 0 0 1px rgba(255,255,255,0.08)" }
+                      }
+                    >
+                      {/* Photo */}
+                      <div className="relative aspect-[3/4] overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                        <Image
+                          src={nominee.imageUrl}
+                          alt={nominee.name}
+                          fill
+                          className={`object-cover transition-transform duration-500 ${isSelected ? "scale-[1.04]" : "group-hover:scale-[1.03]"}`}
+                          sizes="(max-width: 640px) 45vw, 220px"
+                        />
+                        {isSelected && (
+                          <>
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="absolute inset-0"
+                              style={{ background: "linear-gradient(to top, rgba(99,102,241,0.45) 0%, transparent 60%)" }}
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.6 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                              className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center"
+                              style={{ background: ACCENT_GRAD }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                <path d="M2 6.5l3.5 3.5 5.5-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </motion.div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Name */}
+                      <div
+                        className="px-3.5 py-3 transition-colors duration-200"
+                        style={{ background: isSelected ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.04)" }}
+                      >
+                        <p
+                          className="text-xs font-semibold leading-snug line-clamp-2"
+                          style={{ color: isSelected ? "#c7d2fe" : "rgba(255,255,255,0.8)" }}
+                        >
+                          {nominee.name}
+                        </p>
+                        <AnimatePresence>
+                          {isSelected && (
+                            <motion.p
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="font-mono font-medium mt-0.5"
+                              style={{ fontSize: 10, color: "#818cf8" }}
+                            >
+                              YOUR VOTE
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="px-7 py-5 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <button
+            onClick={onBack}
+            disabled={!canGoBack}
+            className="text-sm transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+            style={{ color: "rgba(255,255,255,0.45)" }}
+          >
+            ← Back
+          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onSkip}
+              className="text-sm transition-colors px-2 py-1.5"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              Skip
+            </button>
+            <Button onClick={onNext} disabled={!selectedId} style={BTN_STYLE}>
+              {isLast ? "Review Votes" : "Next →"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Review panel ──────────────────────────────────────────────────────────────
+function ReviewPanel({
+  categories, selected, skipped, votedCount,
+  onEdit, onSubmit, isSubmitting, submitError, onBack,
+}: {
+  categories: Category[];
+  selected: Record<string, string>;
+  skipped: Record<string, true>;
+  votedCount: number;
+  onEdit: (index: number) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  submitError: string | null;
+  onBack: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 30 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -30 }}
+      transition={{ duration: 0.22 }}
+    >
+      <div style={GLASS}>
+        <div className="px-7 py-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "white" }}>Review your votes</h1>
+          <p className="font-mono text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+            {votedCount} voted · {Object.keys(skipped).length} skipped · {categories.length - votedCount - Object.keys(skipped).length} not visited
+          </p>
+        </div>
+
+        <div className="divide-y overflow-y-auto" style={{ maxHeight: "52vh", borderColor: "rgba(255,255,255,0.05)" }}>
+          {categories.map((cat, i) => {
+            const choiceId = selected[cat.id];
+            const choice = cat.nominees.find((n) => n.id === choiceId);
+            const isSkipped = !!skipped[cat.id];
+            return (
+              <div
+                key={cat.id}
+                className="flex items-center gap-4 px-7 py-3.5"
+                style={{ borderColor: "rgba(255,255,255,0.05)" }}
+              >
+                <div className="flex-shrink-0 w-9 h-9 overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  {choice ? (
+                    <Image src={choice.imageUrl} alt={choice.name} width={36} height={36} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div style={{ width: 12, height: 1.5, background: "rgba(255,255,255,0.15)" }} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-mono truncate" style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em" }}>
+                    {cat.name.toUpperCase()}
+                  </p>
+                  <p className="text-sm font-semibold truncate mt-0.5" style={{ color: choice ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.2)" }}>
+                    {choice?.name ?? (isSkipped ? "Skipped" : "—")}
+                  </p>
+                </div>
+                <button
+                  onClick={() => onEdit(i)}
+                  className="text-xs flex-shrink-0 transition-colors"
+                  style={{ color: "#818cf8", fontFamily: "var(--font-mono)" }}
+                >
+                  EDIT
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="px-7 py-5" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          {submitError && (
+            <p className="text-xs mb-4 px-3 py-2.5" style={{ color: "#fca5a5", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              {submitError}
+            </p>
+          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="text-sm transition-colors flex-shrink-0"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              ← Back
+            </button>
+            <Button className="flex-1" disabled={votedCount < 1 || isSubmitting} isLoading={isSubmitting} onClick={onSubmit} style={BTN_STYLE}>
+              Submit {votedCount} Vote{votedCount !== 1 ? "s" : ""}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function VotePage() {
   const router = useRouter();
-  const { selected, setVote, clearAll } = useVotingStore();
+  const { selected, skipped, setVote, setSkip, clearAll } = useVotingStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewMode, setReviewMode] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
   });
 
   const categories = useMemo(() => data ?? [], [data]);
-  const totalCategories = categories.length;
-
-  const progressPercent = totalCategories === 0
-    ? 0
-    : reviewMode
-    ? 100
-    : ((currentIndex + 1) / totalCategories) * 100;
-
+  const total = categories.length;
   const currentCategory = categories[currentIndex];
-  const currentSelection = currentCategory ? selected[currentCategory.id] : undefined;
+  const currentVote = currentCategory ? selected[currentCategory.id] : undefined;
+  const votedCount = Object.keys(selected).length;
+  const skippedCount = Object.keys(skipped).length;
 
-  const selectionComplete = useMemo(() => {
-    if (!categories.length) return false;
-    return categories.every((c) => !!selected[c.id]);
-  }, [categories, selected]);
+  const votePayload = useMemo(
+    () =>
+      categories
+        .filter((c) => selected[c.id])
+        .map((c) => ({ categoryId: c.id, contestantId: selected[c.id] })) as VotePayload[],
+    [categories, selected]
+  );
 
   const submitVotes = useMutation({
     mutationFn: async (votes: VotePayload[]) => {
-      const csrf = await fetchCsrfToken();
-      if (!csrf) throw new Error("Missing CSRF token");
       const res = await fetch("/api/vote", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ votes }),
       });
       if (!res.ok) {
@@ -67,242 +382,271 @@ export default function VotePage() {
       }
       return res.json();
     },
-    onSuccess: () => {
-      clearAll();
-      router.replace("/success");
-    },
+    onSuccess: () => { clearAll(); router.replace("/success"); },
   });
 
+  const getCategoryStatus = (catId: string, index: number): "voted" | "skipped" | "active" | "unvisited" => {
+    if (selected[catId]) return "voted";
+    if (skipped[catId]) return "skipped";
+    if (index === currentIndex && !reviewMode) return "active";
+    return "unvisited";
+  };
+
+  const goToCategory = (index: number) => {
+    setCurrentIndex(index);
+    setReviewMode(false);
+    setShowDrawer(false);
+  };
+
   const handleNext = () => {
-    if (!currentCategory || !currentSelection) return;
-    if (currentIndex + 1 >= totalCategories) {
-      setReviewMode(true);
-      return;
-    }
-    setCurrentIndex((p) => p + 1);
+    if (!currentVote) return;
+    if (currentIndex + 1 >= total) { setReviewMode(true); return; }
+    setCurrentIndex((i) => i + 1);
+  };
+
+  const handleSkip = () => {
+    if (!currentCategory) return;
+    setSkip(currentCategory.id);
+    if (currentIndex + 1 >= total) { setReviewMode(true); return; }
+    setCurrentIndex((i) => i + 1);
   };
 
   const handleBack = () => {
     if (reviewMode) { setReviewMode(false); return; }
-    setCurrentIndex((p) => Math.max(p - 1, 0));
+    setCurrentIndex((i) => Math.max(i - 1, 0));
   };
 
-  const votePayload = useMemo(() =>
-    categories
-      .map((c) => ({ categoryId: c.id, contestantId: selected[c.id] }))
-      .filter((v) => !!v.contestantId) as VotePayload[],
-    [categories, selected]
+  // Sidebar category list — shared between desktop and mobile drawer
+  const CategoryList = ({ onSelect }: { onSelect: (i: number) => void }) => (
+    <>
+      {isLoading &&
+        Array.from({ length: 10 }).map((_, i) => (
+          <div
+            key={i}
+            className="mx-4 my-1 h-6 animate-pulse"
+            style={{ background: "rgba(255,255,255,0.05)", width: `${70 + (i % 4) * 8}%` }}
+          />
+        ))}
+      {categories.map((cat, i) => {
+        const status = getCategoryStatus(cat.id, i);
+        const isActive = i === currentIndex && !reviewMode;
+        return (
+          <button
+            key={cat.id}
+            onClick={() => onSelect(i)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-150"
+            style={{
+              background: isActive ? "rgba(255,255,255,0.08)" : undefined,
+              borderRight: isActive ? "2px solid rgba(255,255,255,0.5)" : "2px solid transparent",
+            }}
+          >
+            <StatusDot status={status} />
+            <span
+              className="text-xs leading-snug flex-1 min-w-0"
+              style={{
+                color: isActive ? "white" : status === "voted" ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.3)",
+                fontWeight: isActive ? 600 : 400,
+                // Allow wrapping for long names instead of truncating
+                whiteSpace: "normal",
+                wordBreak: "break-word",
+              }}
+            >
+              {cat.name}
+            </span>
+          </button>
+        );
+      })}
+    </>
   );
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-white">
-      {/* Progress header */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            {reviewMode ? "Review" : `${currentIndex + 1} / ${totalCategories}`}
-          </p>
-          <p className="text-xs text-gray-400">
-            {reviewMode ? "All categories complete" : `${Math.round(progressPercent)}% complete`}
-          </p>
+    <div className="h-screen flex overflow-hidden relative" style={{ background: PAGE_BG }}>
+      {/* Dot pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.07) 1px, transparent 0)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+      {/* Glow blobs */}
+      <div className="absolute -top-20 -left-20 w-96 h-96 opacity-20 blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
+      <div className="absolute bottom-0 right-1/3 w-72 h-72 opacity-10 blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle, #8b5cf6, transparent 70%)" }} />
+
+      {/* ── Desktop sidebar — explicit width via style to avoid Tailwind conflicts ── */}
+      <aside
+        className="hidden lg:flex flex-col h-full z-10"
+        style={{
+          width: 260,
+          minWidth: 260,
+          background: "rgba(0,0,0,0.3)",
+          borderRight: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        {/* Logo */}
+        <div className="px-5 py-5 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex items-center gap-2.5">
+            <Image src="/general/src-logo.png" alt="MTU" width={28} height={28} className="object-contain" />
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Student Choice Awards</p>
+              <p className="font-mono mt-0.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>MTU 2026</p>
+            </div>
+          </div>
         </div>
-        <div className="max-w-4xl mx-auto h-0.5 bg-gray-100">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="h-full bg-black"
-          />
+
+        {/* Category list */}
+        <div className="flex-1 overflow-y-auto py-2">
+          <CategoryList onSelect={goToCategory} />
         </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
-          </div>
-        )}
-
-        {error && (
-          <div className="border border-gray-200 p-8 text-center">
-            <p className="text-sm font-semibold text-black mb-1">Unable to load categories</p>
-            <p className="text-xs text-gray-500">Please refresh and try again.</p>
-          </div>
-        )}
-
-        {!isLoading && categories.length === 0 && (
-          <div className="border border-gray-200 p-10 text-center">
-            <p className="text-sm font-semibold text-black mb-2">No categories available</p>
-            <Button className="mt-4" onClick={() => router.replace("/success")}>Continue</Button>
-          </div>
-        )}
-
-        {!isLoading && categories.length > 0 && (
-          <AnimatePresence mode="wait">
-            {reviewMode ? (
-              <motion.div
-                key="review"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-              >
-                <div className="mb-6">
-                  <h1 className="text-xl font-bold text-black mb-1">Review your selections</h1>
-                  <p className="text-sm text-gray-500">Check everything looks right before submitting.</p>
-                </div>
-
-                <div className="border border-gray-200 mb-6">
-                  {categories.map((category, i) => {
-                    const choiceId = selected[category.id];
-                    const choice = category.nominees.find((n) => n.id === choiceId);
-                    return (
-                      <div
-                        key={category.id}
-                        className={`flex items-center justify-between gap-4 px-5 py-4 ${i < categories.length - 1 ? "border-b border-gray-100" : ""}`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {choice?.imageUrl && (
-                            <div className="w-10 h-10 flex-shrink-0 overflow-hidden bg-gray-100">
-                              <Image src={choice.imageUrl} alt={choice.name} width={40} height={40} className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-400 truncate">{category.name}</p>
-                            <p className="text-sm font-semibold text-black truncate">
-                              {choice?.name ?? <span className="text-gray-400 font-normal italic">Not selected</span>}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          className="text-xs text-gray-500 hover:text-black underline underline-offset-2 flex-shrink-0"
-                          onClick={() => { setReviewMode(false); setCurrentIndex(categories.findIndex((c) => c.id === category.id)); }}
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-3">
-                  <Button variant="secondary" size="lg" onClick={handleBack}>Back</Button>
-                  <Button
-                    size="lg"
-                    className="flex-1"
-                    disabled={!selectionComplete || submitVotes.isPending}
-                    isLoading={submitVotes.isPending}
-                    onClick={() => submitVotes.mutate(votePayload)}
-                  >
-                    Submit All Votes
-                  </Button>
-                </div>
-
-                {submitVotes.isError && (
-                  <p className="mt-3 text-xs text-red-600">{(submitVotes.error as Error).message}</p>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key={currentCategory.id}
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-              >
-                {/* Category header */}
-                <div className="flex items-start justify-between gap-4 mb-6">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">
-                      Category {currentIndex + 1} of {totalCategories}
-                    </p>
-                    <h1 className="text-xl font-bold text-black">{currentCategory.name}</h1>
-                    <p className="text-sm text-gray-500 mt-1">Select one candidate to continue</p>
-                  </div>
-                  {currentSelection && (
-                    <motion.span
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex-shrink-0 text-xs font-semibold text-black border border-black px-2.5 py-1"
-                    >
-                      ✓ Selected
-                    </motion.span>
-                  )}
-                </div>
-
-                {/* Nominees grid */}
-                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 mb-8">
-                  {currentCategory.nominees.map((contestant, i) => {
-                    const isSelected = selected[currentCategory.id] === contestant.id;
-                    return (
-                      <motion.button
-                        key={contestant.id}
-                        type="button"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05, duration: 0.25 }}
-                        whileHover={{ y: -2 }}
-                        whileTap={{ scale: 0.99 }}
-                        onClick={() => setVote(currentCategory.id, contestant.id)}
-                        className={`group text-left focus:outline-none transition-all duration-150 ${
-                          isSelected ? "ring-2 ring-black ring-offset-0" : "ring-1 ring-gray-200 hover:ring-gray-400"
-                        }`}
-                      >
-                        {/* Image */}
-                        <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-                          <Image
-                            src={contestant.imageUrl}
-                            alt={contestant.name}
-                            fill
-                            className={`object-cover transition-transform duration-400 group-hover:scale-105 ${isSelected ? "scale-105" : ""}`}
-                          />
-                          {isSelected && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                              className="absolute top-2 right-2 w-6 h-6 bg-black text-white flex items-center justify-center"
-                            >
-                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" />
-                              </svg>
-                            </motion.div>
-                          )}
-                        </div>
-                        {/* Name */}
-                        <div className="py-2.5 px-0.5">
-                          <p className={`text-xs font-semibold leading-tight truncate ${isSelected ? "text-black" : "text-gray-800"}`}>
-                            {contestant.name}
-                          </p>
-                          {isSelected && (
-                            <motion.p
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className="text-xs text-black mt-0.5"
-                            >
-                              Selected
-                            </motion.p>
-                          )}
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-
-                {/* Navigation */}
-                <div className="flex gap-3 pt-4 border-t border-gray-100">
-                  <Button variant="secondary" size="lg" disabled={currentIndex === 0} onClick={handleBack}>
-                    Previous
-                  </Button>
-                  <Button size="lg" className="flex-1" disabled={!currentSelection} onClick={handleNext}>
-                    {currentIndex + 1 >= totalCategories ? "Review Votes" : "Next Category"}
-                  </Button>
-                </div>
-              </motion.div>
+        {/* Progress + submit */}
+        <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+              {votedCount}/{total} voted
+            </p>
+            {skippedCount > 0 && (
+              <p className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
+                {skippedCount} skipped
+              </p>
             )}
-          </AnimatePresence>
-        )}
+          </div>
+          <div className="h-0.5 mb-3" style={{ background: "rgba(255,255,255,0.08)" }}>
+            <motion.div
+              className="h-full"
+              style={{ background: ACCENT_GRAD }}
+              initial={{ width: 0 }}
+              animate={{ width: `${total > 0 ? (votedCount / total) * 100 : 0}%` }}
+              transition={{ duration: 0.4 }}
+            />
+          </div>
+          <button
+            onClick={() => setReviewMode(true)}
+            disabled={votedCount < 1}
+            className="w-full py-2.5 text-xs font-semibold text-white transition-opacity duration-150 disabled:opacity-25 disabled:cursor-not-allowed font-mono tracking-wide"
+            style={{ background: votedCount >= 1 ? ACCENT_GRAD : "rgba(255,255,255,0.06)" }}
+          >
+            REVIEW & SUBMIT
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Mobile top bar ── */}
+      <div
+        className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center gap-3 px-4 py-3"
+        style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+      >
+        <Image src="/general/src-logo.png" alt="MTU" width={22} height={22} className="object-contain flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white truncate">Student Choice Awards</p>
+          <p className="font-mono mt-0.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
+            {reviewMode ? "REVIEW" : `${String(currentIndex + 1).padStart(2,"0")}/${String(total).padStart(2,"0")}`} · {votedCount} VOTED
+          </p>
+        </div>
+        <button
+          onClick={() => setShowDrawer(true)}
+          className="text-xs px-2.5 py-1.5 flex-shrink-0 font-mono tracking-wide"
+          style={{ color: "rgba(255,255,255,0.65)", border: "1px solid rgba(255,255,255,0.15)" }}
+        >
+          CATEGORIES
+        </button>
       </div>
+
+      {/* ── Mobile drawer ── */}
+      <AnimatePresence>
+        {showDrawer && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 z-30"
+              style={{ background: "rgba(0,0,0,0.7)" }}
+              onClick={() => setShowDrawer(false)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 280 }}
+              className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex flex-col"
+              style={{ maxHeight: "78vh", background: "linear-gradient(180deg, #1c1840 0%, #0f0c29 100%)", borderTop: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <p className="text-sm font-bold text-white">All Categories</p>
+                <button onClick={() => setShowDrawer(false)} className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>CLOSE</button>
+              </div>
+              <div className="overflow-y-auto flex-1 py-2">
+                <CategoryList onSelect={(i) => { goToCategory(i); setShowDrawer(false); }} />
+              </div>
+              <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <button
+                  onClick={() => { setReviewMode(true); setShowDrawer(false); }}
+                  disabled={votedCount < 1}
+                  className="w-full py-2.5 text-xs font-semibold text-white disabled:opacity-25 font-mono tracking-wide"
+                  style={{ background: votedCount >= 1 ? ACCENT_GRAD : "rgba(255,255,255,0.06)" }}
+                >
+                  REVIEW & SUBMIT
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Main content ── */}
+      <main className="flex-1 h-full overflow-y-auto relative z-10 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8 flex items-start justify-center">
+        {isLoading && (
+          <div className="flex items-center justify-center w-full py-32">
+            <div
+              className="w-8 h-8 border-2 rounded-full animate-spin"
+              style={{ borderColor: "rgba(255,255,255,0.12)", borderTopColor: "rgba(255,255,255,0.7)" }}
+            />
+          </div>
+        )}
+
+        {isError && (
+          <div className="w-full max-w-lg mt-8 p-8 text-center" style={GLASS}>
+            <p className="text-sm font-semibold text-white mb-1">Unable to load categories</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Please refresh and try again.</p>
+          </div>
+        )}
+
+        {!isLoading && !isError && categories.length > 0 && (
+          <div className="w-full max-w-3xl pb-8">
+            <AnimatePresence mode="wait">
+              {reviewMode ? (
+                <ReviewPanel
+                  key="review"
+                  categories={categories}
+                  selected={selected}
+                  skipped={skipped}
+                  votedCount={votedCount}
+                  onEdit={goToCategory}
+                  onSubmit={() => submitVotes.mutate(votePayload)}
+                  isSubmitting={submitVotes.isPending}
+                  submitError={submitVotes.error instanceof Error ? submitVotes.error.message : null}
+                  onBack={() => setReviewMode(false)}
+                />
+              ) : currentCategory ? (
+                <CategoryPanel
+                  key={currentCategory.id}
+                  category={currentCategory}
+                  index={currentIndex}
+                  total={total}
+                  selectedId={currentVote}
+                  onSelect={(id) => setVote(currentCategory.id, id)}
+                  onNext={handleNext}
+                  onSkip={handleSkip}
+                  onBack={handleBack}
+                  canGoBack={currentIndex > 0}
+                  isLast={currentIndex + 1 >= total}
+                />
+              ) : null}
+            </AnimatePresence>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

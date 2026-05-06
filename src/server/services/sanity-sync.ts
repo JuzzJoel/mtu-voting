@@ -17,7 +17,7 @@ type SanityCategory = {
 }
 
 export async function syncSanityContent() {
-  if (!process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) return
+  if (!sanityClient) return
 
   const categories = await sanityClient.fetch<SanityCategory[]>(
     categoriesWithNomineesQuery

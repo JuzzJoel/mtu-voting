@@ -48,6 +48,7 @@ const config: Config = {
         sans: ['var(--font-inter)', 'Inter', 'sans-serif'],
         display: ['var(--font-inter)', 'Inter', 'sans-serif'],
         heading: ['var(--font-inter)', 'Inter', 'sans-serif'],
+        mono: ['var(--font-mono)', 'Geist Mono', 'monospace'],
       },
       fontSize: {
         'display-xl': ['64px', { lineHeight: '1.2', fontWeight: '700' }],
