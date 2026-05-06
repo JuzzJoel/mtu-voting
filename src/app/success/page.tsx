@@ -2,94 +2,72 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
 
 export default function SuccessPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-16">
+    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4 py-12">
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-lg w-full"
+        transition={{ duration: 0.35 }}
+        className="w-full max-w-sm"
       >
-        <Card variant="glass" className="p-10 md:p-14 text-center">
-          {/* Animated rings + checkmark */}
-          <div className="relative mx-auto mb-10 w-24 h-24">
-            {[1, 2, 3].map((ring) => (
+        <div className="border border-gray-200 bg-white p-10 text-center">
+          {/* Animated checkmark */}
+          <div className="relative mx-auto mb-8 w-16 h-16 border border-gray-200 flex items-center justify-center">
+            {[1, 2].map((ring) => (
               <motion.div
                 key={ring}
-                className="absolute inset-0 rounded-full border border-primary-green/20"
-                style={{ transform: "translate(-50%, -50%)", left: "50%", top: "50%" }}
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{
-                  scale: 1 + ring * 0.38,
-                  opacity: [0, 0.5, 0],
-                }}
+                className="absolute inset-0 border border-black"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1 + ring * 0.3, opacity: [0, 0.3, 0] }}
                 transition={{
-                  delay: ring * 0.2,
-                  duration: 2.5,
+                  delay: ring * 0.15,
+                  duration: 2,
                   repeat: Infinity,
                   ease: "easeOut",
                 }}
               />
             ))}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, type: "spring", stiffness: 200, damping: 18 }}
-              className="relative w-24 h-24 rounded-full flex items-center justify-center border border-primary-green/40"
-              style={{ background: "radial-gradient(circle, rgba(20,184,166,0.18) 0%, rgba(20,184,166,0.04) 100%)" }}
-            >
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                <motion.path
-                  d="M10 20l8 8 12-16"
-                  stroke="#14B8A6"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ delay: 0.3, duration: 0.7, ease: "easeOut" }}
-                />
-              </svg>
-            </motion.div>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <motion.path
+                d="M6 14l6 6 10-12"
+                stroke="#000"
+                strokeWidth="2.5"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+              />
+            </svg>
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.35 }}
           >
-            <h1 className="text-display-lg text-white leading-tight" style={{ letterSpacing: "-0.03em" }}>
-              Your vote is in.
-            </h1>
-            <p className="mt-4 text-body-lg text-neutral-text-secondary max-w-xs mx-auto leading-relaxed">
-              Thank you for shaping the MTU community. Your voice has been recorded securely.
+            <h1 className="text-xl font-bold text-black mb-3">Your vote is in.</h1>
+            <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+              Thank you for participating in the MTU Student Choice Awards. Your voice has been recorded securely.
             </p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="my-8 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)" }}
-          />
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            transition={{ delay: 0.5 }}
+            className="mt-8 pt-6 border-t border-gray-100"
           >
-            <Link href="/">
-              <Button variant="secondary" size="lg">
+            <Link href="/auth">
+              <Button variant="secondary" size="lg" className="w-full">
                 Back to Home
               </Button>
             </Link>
           </motion.div>
-        </Card>
+        </div>
       </motion.div>
     </div>
   );

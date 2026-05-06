@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useVotingStore } from "@/stores/voting-store";
 
 type Nominee = { id: string; name: string; imageUrl: string };
@@ -24,12 +24,6 @@ const fetchCsrfToken = async () => {
   return data.token ?? "";
 };
 
-const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-    <path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 export default function VotePage() {
   const router = useRouter();
   const { selected, setVote, clearAll } = useVotingStore();
@@ -44,16 +38,18 @@ export default function VotePage() {
   const categories = useMemo(() => data ?? [], [data]);
   const totalCategories = categories.length;
 
-  const progressTotal = totalCategories + 1;
-  const progressStep = reviewMode ? progressTotal : Math.min(currentIndex + 1, progressTotal);
-  const progressPercent = progressTotal === 0 ? 0 : (progressStep / progressTotal) * 100;
+  const progressPercent = totalCategories === 0
+    ? 0
+    : reviewMode
+    ? 100
+    : ((currentIndex + 1) / totalCategories) * 100;
 
   const currentCategory = categories[currentIndex];
   const currentSelection = currentCategory ? selected[currentCategory.id] : undefined;
 
   const selectionComplete = useMemo(() => {
     if (!categories.length) return false;
-    return categories.every((category) => !!selected[category.id]);
+    return categories.every((c) => !!selected[c.id]);
   }, [categories, selected]);
 
   const submitVotes = useMutation({
@@ -66,8 +62,8 @@ export default function VotePage() {
         body: JSON.stringify({ votes }),
       });
       if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        throw new Error(data.error ?? "Failed to submit votes");
+        const d = (await res.json()) as { error?: string };
+        throw new Error(d.error ?? "Failed to submit votes");
       }
       return res.json();
     },
@@ -83,99 +79,62 @@ export default function VotePage() {
       setReviewMode(true);
       return;
     }
-    setCurrentIndex((prev) => prev + 1);
+    setCurrentIndex((p) => p + 1);
   };
 
   const handleBack = () => {
-    if (reviewMode) {
-      setReviewMode(false);
-      return;
-    }
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+    if (reviewMode) { setReviewMode(false); return; }
+    setCurrentIndex((p) => Math.max(p - 1, 0));
   };
 
-  const votePayload = useMemo(() => {
-    return categories
-      .map((category) => ({ categoryId: category.id, contestantId: selected[category.id] }))
-      .filter((vote) => !!vote.contestantId) as VotePayload[];
-  }, [categories, selected]);
+  const votePayload = useMemo(() =>
+    categories
+      .map((c) => ({ categoryId: c.id, contestantId: selected[c.id] }))
+      .filter((v) => !!v.contestantId) as VotePayload[],
+    [categories, selected]
+  );
 
   return (
-    <div className="min-h-screen">
-      <div className="container-custom py-10">
-        {/* Header + Progress */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
-            <div>
-              <p className="text-caption text-neutral-text-secondary uppercase tracking-widest mb-1">
-                {reviewMode ? "Final Review" : `Category ${currentIndex + 1} of ${totalCategories}`}
-              </p>
-              <h1 className="text-h1 text-white" style={{ letterSpacing: "-0.02em" }}>
-                MTU Voting Booth
-              </h1>
-            </div>
-            <span
-              className={`self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full border text-caption font-medium transition-colors ${
-                reviewMode
-                  ? "border-primary-green/40 bg-primary-green/10 text-primary-green"
-                  : "border-white/[0.1] bg-white/[0.04] text-neutral-text-secondary"
-              }`}
-            >
-              {reviewMode ? "Review" : `Step ${progressStep} / ${progressTotal}`}
-            </span>
-          </div>
+    <div className="min-h-[calc(100vh-56px)] bg-white">
+      {/* Progress header */}
+      <div className="border-b border-gray-200 bg-white px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            {reviewMode ? "Review" : `${currentIndex + 1} / ${totalCategories}`}
+          </p>
+          <p className="text-xs text-gray-400">
+            {reviewMode ? "All categories complete" : `${Math.round(progressPercent)}% complete`}
+          </p>
+        </div>
+        <div className="max-w-4xl mx-auto h-0.5 bg-gray-100">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="h-full bg-black"
+          />
+        </div>
+      </div>
 
-          {/* Progress bar */}
-          <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-full rounded-full bg-gradient-to-r from-primary-green to-primary-purple"
-            />
-          </div>
-
-          {/* Category dots */}
-          {!reviewMode && totalCategories > 0 && (
-            <div className="mt-3 flex gap-1.5">
-              {categories.map((_, i) => (
-                <motion.div
-                  key={i}
-                  animate={{
-                    width: i === currentIndex ? 24 : i < currentIndex ? 16 : 8,
-                    opacity: i <= currentIndex ? 1 : 0.3,
-                  }}
-                  transition={{ duration: 0.3 }}
-                  className={`h-1 rounded-full ${
-                    i < currentIndex ? "bg-primary-green" : i === currentIndex ? "bg-primary-purple" : "bg-white/20"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </motion.div>
-
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {isLoading && (
-          <div className="py-20 flex items-center justify-center">
-            <div className="w-9 h-9 border-2 border-primary-purple/20 border-t-primary-purple rounded-full animate-spin" />
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
           </div>
         )}
 
         {error && (
-          <Card variant="glass" className="p-8">
-            <h2 className="text-h2 text-white mb-2">Unable to load categories</h2>
-            <p className="text-body-sm text-neutral-text-secondary">Please refresh and try again.</p>
-          </Card>
+          <div className="border border-gray-200 p-8 text-center">
+            <p className="text-sm font-semibold text-black mb-1">Unable to load categories</p>
+            <p className="text-xs text-gray-500">Please refresh and try again.</p>
+          </div>
         )}
 
         {!isLoading && categories.length === 0 && (
-          <Card variant="glass" className="p-10 text-center">
-            <h2 className="text-h2 text-white mb-2">You&apos;re all set!</h2>
-            <p className="text-body-sm text-neutral-text-secondary">No categories are available right now.</p>
-            <Button className="mt-6" onClick={() => router.replace("/success")}>
-              Go to Success
-            </Button>
-          </Card>
+          <div className="border border-gray-200 p-10 text-center">
+            <p className="text-sm font-semibold text-black mb-2">No categories available</p>
+            <Button className="mt-4" onClick={() => router.replace("/success")}>Continue</Button>
+          </div>
         )}
 
         {!isLoading && categories.length > 0 && (
@@ -183,208 +142,162 @@ export default function VotePage() {
             {reviewMode ? (
               <motion.div
                 key="review"
-                initial={{ opacity: 0, x: 40 }}
+                initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
               >
-                <Card variant="glass" className="p-6 md:p-8">
-                  <div className="mb-6">
-                    <h2 className="text-h2 text-white mb-1" style={{ letterSpacing: "-0.02em" }}>
-                      Review your selections
-                    </h2>
-                    <p className="text-body-sm text-neutral-text-secondary">
-                      Make sure everything looks right before submitting.
-                    </p>
-                  </div>
-                  <div className="space-y-2.5">
-                    {categories.map((category) => {
-                      const choiceId = selected[category.id];
-                      const choice = category.nominees.find((n) => n.id === choiceId);
-                      return (
-                        <div
-                          key={category.id}
-                          className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 hover:border-white/[0.14] transition-colors"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            {choice?.imageUrl && (
-                              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-card-dark">
-                                <Image
-                                  src={choice.imageUrl}
-                                  alt={choice.name}
-                                  width={40}
-                                  height={40}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-caption text-neutral-text-secondary truncate">{category.name}</p>
-                              <p className="text-body-md text-white font-semibold truncate">
-                                {choice?.name ?? (
-                                  <span className="text-neutral-text-secondary italic font-normal">Not selected</span>
-                                )}
-                              </p>
+                <div className="mb-6">
+                  <h1 className="text-xl font-bold text-black mb-1">Review your selections</h1>
+                  <p className="text-sm text-gray-500">Check everything looks right before submitting.</p>
+                </div>
+
+                <div className="border border-gray-200 mb-6">
+                  {categories.map((category, i) => {
+                    const choiceId = selected[category.id];
+                    const choice = category.nominees.find((n) => n.id === choiceId);
+                    return (
+                      <div
+                        key={category.id}
+                        className={`flex items-center justify-between gap-4 px-5 py-4 ${i < categories.length - 1 ? "border-b border-gray-100" : ""}`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {choice?.imageUrl && (
+                            <div className="w-10 h-10 flex-shrink-0 overflow-hidden bg-gray-100">
+                              <Image src={choice.imageUrl} alt={choice.name} width={40} height={40} className="w-full h-full object-cover" />
                             </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-400 truncate">{category.name}</p>
+                            <p className="text-sm font-semibold text-black truncate">
+                              {choice?.name ?? <span className="text-gray-400 font-normal italic">Not selected</span>}
+                            </p>
                           </div>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="flex-shrink-0"
-                            onClick={() => {
-                              setReviewMode(false);
-                              setCurrentIndex(categories.findIndex((c) => c.id === category.id));
-                            }}
-                          >
-                            Edit
-                          </Button>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div
-                    className="mt-8 flex flex-col sm:flex-row gap-4 pt-6"
-                    style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+                        <button
+                          className="text-xs text-gray-500 hover:text-black underline underline-offset-2 flex-shrink-0"
+                          onClick={() => { setReviewMode(false); setCurrentIndex(categories.findIndex((c) => c.id === category.id)); }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="secondary" size="lg" onClick={handleBack}>Back</Button>
+                  <Button
+                    size="lg"
+                    className="flex-1"
+                    disabled={!selectionComplete || submitVotes.isPending}
+                    isLoading={submitVotes.isPending}
+                    onClick={() => submitVotes.mutate(votePayload)}
                   >
-                    <Button variant="secondary" size="lg" onClick={handleBack}>
-                      Back
-                    </Button>
-                    <Button
-                      size="lg"
-                      className="flex-1"
-                      disabled={!selectionComplete || submitVotes.isPending}
-                      isLoading={submitVotes.isPending}
-                      onClick={() => submitVotes.mutate(votePayload)}
-                    >
-                      Submit All Votes
-                    </Button>
-                  </div>
-                  {submitVotes.isError && (
-                    <p className="mt-4 text-body-sm text-accent-red">{(submitVotes.error as Error).message}</p>
-                  )}
-                </Card>
+                    Submit All Votes
+                  </Button>
+                </div>
+
+                {submitVotes.isError && (
+                  <p className="mt-3 text-xs text-red-600">{(submitVotes.error as Error).message}</p>
+                )}
               </motion.div>
             ) : (
               <motion.div
                 key={currentCategory.id}
-                initial={{ opacity: 0, x: 40 }}
+                initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
               >
-                <Card variant="glass" className="p-6 md:p-8">
-                  {/* Category header */}
-                  <div className="flex items-start justify-between gap-4 mb-7">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-purple/10 border border-primary-purple/20 text-caption text-primary-purple font-medium mb-3">
-                        Category {currentIndex + 1} of {totalCategories}
-                      </span>
-                      <h2 className="text-h2 text-white" style={{ letterSpacing: "-0.02em" }}>
-                        {currentCategory.name}
-                      </h2>
-                      <p className="text-body-sm text-neutral-text-secondary mt-1">Select one candidate to continue</p>
-                    </div>
-                    {currentSelection && (
-                      <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 22 }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-green/10 border border-primary-green/30 text-caption text-primary-green font-medium flex-shrink-0"
+                {/* Category header */}
+                <div className="flex items-start justify-between gap-4 mb-6">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">
+                      Category {currentIndex + 1} of {totalCategories}
+                    </p>
+                    <h1 className="text-xl font-bold text-black">{currentCategory.name}</h1>
+                    <p className="text-sm text-gray-500 mt-1">Select one candidate to continue</p>
+                  </div>
+                  {currentSelection && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex-shrink-0 text-xs font-semibold text-black border border-black px-2.5 py-1"
+                    >
+                      ✓ Selected
+                    </motion.span>
+                  )}
+                </div>
+
+                {/* Nominees grid */}
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 mb-8">
+                  {currentCategory.nominees.map((contestant, i) => {
+                    const isSelected = selected[currentCategory.id] === contestant.id;
+                    return (
+                      <motion.button
+                        key={contestant.id}
+                        type="button"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05, duration: 0.25 }}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => setVote(currentCategory.id, contestant.id)}
+                        className={`group text-left focus:outline-none transition-all duration-150 ${
+                          isSelected ? "ring-2 ring-black ring-offset-0" : "ring-1 ring-gray-200 hover:ring-gray-400"
+                        }`}
                       >
-                        <CheckIcon />
-                        Selected
-                      </motion.div>
-                    )}
-                  </div>
+                        {/* Image */}
+                        <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+                          <Image
+                            src={contestant.imageUrl}
+                            alt={contestant.name}
+                            fill
+                            className={`object-cover transition-transform duration-400 group-hover:scale-105 ${isSelected ? "scale-105" : ""}`}
+                          />
+                          {isSelected && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                              className="absolute top-2 right-2 w-6 h-6 bg-black text-white flex items-center justify-center"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" />
+                              </svg>
+                            </motion.div>
+                          )}
+                        </div>
+                        {/* Name */}
+                        <div className="py-2.5 px-0.5">
+                          <p className={`text-xs font-semibold leading-tight truncate ${isSelected ? "text-black" : "text-gray-800"}`}>
+                            {contestant.name}
+                          </p>
+                          {isSelected && (
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="text-xs text-black mt-0.5"
+                            >
+                              Selected
+                            </motion.p>
+                          )}
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
 
-                  {/* Nominees grid */}
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {currentCategory.nominees.map((contestant, i) => {
-                      const isSelected = selected[currentCategory.id] === contestant.id;
-                      return (
-                        <motion.button
-                          key={contestant.id}
-                          type="button"
-                          initial={{ opacity: 0, y: 16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.07, duration: 0.35 }}
-                          whileHover={{ scale: 1.02, y: -3 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setVote(currentCategory.id, contestant.id)}
-                          className={`group relative text-left rounded-2xl border-2 transition-all duration-300 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-green/50 ${
-                            isSelected
-                              ? "border-primary-green shadow-glow-green"
-                              : "border-white/[0.08] hover:border-white/25"
-                          }`}
-                        >
-                          {/* Portrait image container */}
-                          <div className="relative aspect-[3/4] overflow-hidden bg-neutral-card-dark">
-                            <Image
-                              src={contestant.imageUrl}
-                              alt={contestant.name}
-                              fill
-                              className={`object-cover transition-transform duration-500 ${
-                                isSelected ? "scale-105" : "group-hover:scale-105"
-                              }`}
-                            />
-                            {/* Gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-
-                            {/* Selected tint */}
-                            {isSelected && (
-                              <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="absolute inset-0 bg-primary-green/[0.07]"
-                              />
-                            )}
-
-                            {/* Check badge */}
-                            {isSelected && (
-                              <motion.div
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary-green text-white flex items-center justify-center shadow-glow-green"
-                              >
-                                <CheckIcon />
-                              </motion.div>
-                            )}
-
-                            {/* Name at bottom */}
-                            <div className="absolute bottom-0 left-0 right-0 p-4">
-                              <h3 className="text-white font-semibold text-body-md leading-tight">
-                                {contestant.name}
-                              </h3>
-                              {isSelected && (
-                                <motion.p
-                                  initial={{ opacity: 0, y: 4 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  className="text-primary-green text-caption font-medium mt-0.5"
-                                >
-                                  Selected
-                                </motion.p>
-                              )}
-                            </div>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Navigation */}
-                  <div
-                    className="mt-8 flex flex-col sm:flex-row gap-4 pt-6"
-                    style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
-                  >
-                    <Button variant="secondary" size="lg" disabled={currentIndex === 0} onClick={handleBack}>
-                      Previous
-                    </Button>
-                    <Button size="lg" className="flex-1" disabled={!currentSelection} onClick={handleNext}>
-                      {currentIndex + 1 >= totalCategories ? "Review All Votes" : "Next Category"}
-                    </Button>
-                  </div>
-                </Card>
+                {/* Navigation */}
+                <div className="flex gap-3 pt-4 border-t border-gray-100">
+                  <Button variant="secondary" size="lg" disabled={currentIndex === 0} onClick={handleBack}>
+                    Previous
+                  </Button>
+                  <Button size="lg" className="flex-1" disabled={!currentSelection} onClick={handleNext}>
+                    {currentIndex + 1 >= totalCategories ? "Review Votes" : "Next Category"}
+                  </Button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -22,34 +22,24 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     },
     ref
   ) => {
-    const baseStyles =
-      "rounded-2xl border transition-all duration-fast overflow-hidden";
+    const baseStyles = "rounded-none border transition-all duration-150 overflow-hidden";
 
     const variantStyles = {
-      default:
-        "bg-neutral-card-dark border-neutral-border/70 shadow-card",
-      glass:
-        "bg-white/[0.04] backdrop-blur-glass border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),_0_24px_64px_rgba(0,0,0,0.4)]",
-      dark:
-        "bg-neutral-surface-dark/90 border-neutral-border/50",
-    };
-
-    const glowStyles = {
-      green: "hover:shadow-glow-green",
-      purple: "hover:shadow-glow-purple",
-      none: "",
+      default: "bg-white border-gray-200 shadow-sm",
+      glass: "bg-white border-gray-200 shadow-sm",
+      dark: "bg-gray-50 border-gray-200",
     };
 
     const interactiveStyles = interactive ? "cursor-pointer" : "";
 
     const motionProps = hoverScale
-      ? { whileHover: { scale: 1.02 }, whileTap: { scale: 0.98 } }
+      ? { whileHover: { scale: 1.01 }, whileTap: { scale: 0.99 } }
       : {};
 
     return (
       <motion.div
         ref={ref}
-        className={`${baseStyles} ${variantStyles[variant]} ${glowStyles[glow]} ${interactiveStyles} ${className}`}
+        className={`${baseStyles} ${variantStyles[variant]} ${interactiveStyles} ${className}`}
         {...(interactive ? motionProps : {})}
       >
         {children}
@@ -64,7 +54,7 @@ export const CardHeader = ({
   className = "",
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`px-6 py-4 border-b border-white/5 ${className}`} {...props} />
+  <div className={`px-6 py-4 border-b border-gray-100 ${className}`} {...props} />
 );
 
 export const CardContent = ({
@@ -79,7 +69,7 @@ export const CardFooter = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={`px-6 py-3 bg-neutral-surface-dark/70 border-t border-white/5 flex items-center gap-3 ${className}`}
+    className={`px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center gap-3 ${className}`}
     {...props}
   />
 );

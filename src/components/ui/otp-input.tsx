@@ -32,7 +32,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" &&!values[index] && index > 0) {
+    if (e.key === "Backspace" && !values[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
       const newValues = [...values];
       newValues[index - 1] = "";
@@ -56,7 +56,6 @@ export const OTPInput: React.FC<OTPInputProps> = ({
     }
   };
 
-  // Auto focus first input on mount
   useEffect(() => {
     if (!disabled) inputRefs.current[0]?.focus();
   }, [disabled]);
@@ -76,15 +75,14 @@ export const OTPInput: React.FC<OTPInputProps> = ({
           value={values[index] || ""}
           onChange={(e) => handleChange(index, e.target.value)}
           onKeyDown={(e) => handleKeyDown(index, e)}
-          onPaste={index === 0? handlePaste : undefined}
+          onPaste={index === 0 ? handlePaste : undefined}
           disabled={disabled}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.15, delay: index * 0.03 }}
-          className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16
-                     text-center text-xl sm:text-2xl md:text-3xl font-bold
-                     bg-neutral-card-dark border-2 border-neutral-border/70 rounded-lg
-                     focus:outline-none focus:ring-2 focus:ring-primary-purple/50 focus:border-primary-purple
+          className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl font-bold
+                     bg-white border border-gray-300 rounded-none
+                     focus:outline-none focus:border-black focus:ring-0
                      transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
                      [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />

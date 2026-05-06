@@ -29,41 +29,37 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "font-semibold rounded-md transition-all duration-fast font-sans flex items-center justify-center gap-2 relative overflow-hidden";
+      "font-semibold rounded-none transition-all duration-150 font-sans flex items-center justify-center gap-2 relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed";
 
     const sizeStyles = {
-      sm: "px-4 py-2 text-body-sm h-10",
-      md: "px-6 py-3 text-body-md h-12",
-      lg: "px-8 py-4 text-body-lg h-[52px]",
+      sm: "px-4 py-2 text-xs h-8",
+      md: "px-5 py-2.5 text-sm h-10",
+      lg: "px-6 py-3 text-sm h-11",
     };
 
     const variantStyles = {
-      primary:
-        "bg-gradient-to-r from-primary-green to-primary-purple text-white hover:shadow-glow-purple-xl border border-transparent btn-shimmer",
-      secondary:
-        "bg-transparent border border-white/[0.18] text-white hover:bg-white/[0.08] hover:border-white/35",
-      tertiary:
-        "bg-neutral-surface-dark/80 border border-neutral-border text-neutral-text-primary hover:bg-neutral-card-dark hover:border-primary-purple/60",
-      ghost:
-        "bg-transparent text-neutral-text-primary hover:text-primary-green border-none",
+      primary: "bg-black text-white hover:bg-gray-800 border border-black",
+      secondary: "bg-white text-gray-900 border border-gray-300 hover:border-gray-900 hover:bg-gray-50",
+      tertiary: "bg-gray-50 text-gray-900 border border-gray-200 hover:border-gray-900",
+      ghost: "bg-transparent text-gray-700 hover:text-black border-none",
     };
 
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
         className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
         disabled={disabled || isLoading}
         onClick={onClick}
         type={type}
       >
         {isLoading ? (
-          <span className="flex items-center gap-1.5">
-            {[0, 150, 300].map((delay) => (
+          <span className="flex items-center gap-1">
+            {[0, 120, 240].map((delay) => (
               <span
                 key={delay}
-                className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce"
+                className="w-1.5 h-1.5 rounded-full bg-current opacity-70 animate-bounce"
                 style={{ animationDelay: `${delay}ms` }}
               />
             ))}

@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -23,32 +22,30 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const baseStyles =
-      "w-full rounded-xl border transition-all duration-fast text-body-md";
+      "w-full rounded-none border transition-all duration-150 text-sm text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:border-black focus:ring-0";
 
-    const focusStyles = "focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary-purple/60";
-
-    const defaultStyles = `bg-white/[0.04] border-white/[0.1] text-neutral-text-primary placeholder:text-neutral-text-secondary/50 px-4 py-3 hover:border-white/20 ${focusStyles}`;
+    const defaultStyles = `border-gray-300 px-4 py-2.5 ${icon ? "pl-10" : ""}`;
 
     const otpStyles =
-      "w-12 h-12 text-center text-h3 font-bold bg-white/[0.04] border-white/[0.1] animate-pulse-border focus:animate-none focus:border-primary-green/60 focus:ring-2 focus:ring-primary-green/20";
+      "w-12 h-12 text-center text-xl font-bold border-gray-300 focus:border-black focus:ring-0";
 
     const containerClass = `relative ${icon ? "flex items-center" : ""}`;
 
     const inputClass =
       variant === "otp"
         ? `${baseStyles} ${otpStyles} ${className}`
-        : `${baseStyles} ${defaultStyles} ${icon ? "pl-10" : ""} ${className}`;
+        : `${baseStyles} ${defaultStyles} ${className}`;
 
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-body-sm font-semibold text-neutral-text-primary mb-2">
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
             {label}
           </label>
         )}
-        <motion.div className={containerClass} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <div className={containerClass}>
           {icon && (
-            <div className="absolute left-3 text-neutral-text-secondary">
+            <div className="absolute left-3 text-gray-400">
               {icon}
             </div>
           )}
@@ -58,15 +55,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             disabled={disabled}
             {...props}
           />
-        </motion.div>
+        </div>
         {error && (
-          <motion.p
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-accent-red text-body-sm mt-1"
-          >
+          <p className="text-red-600 text-xs mt-1">
             {error}
-          </motion.p>
+          </p>
         )}
       </div>
     );

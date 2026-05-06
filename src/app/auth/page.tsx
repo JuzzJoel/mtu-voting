@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Button, Card, Input, OTPInput } from "@/components/ui";
+import { Button, OTPInput } from "@/components/ui";
 import { mtuEmailRegex } from "@/lib/security/validators";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -35,9 +36,7 @@ export default function AuthPage() {
   }, []);
 
   useEffect(() => {
-    if (!storedEmail) {
-      setStep("email");
-    }
+    if (!storedEmail) setStep("email");
   }, [storedEmail]);
 
   const ensureCsrf = async () => {
@@ -57,7 +56,7 @@ export default function AuthPage() {
     return fetch("/api/auth/request-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email }),
     });
   };
 
@@ -67,7 +66,7 @@ export default function AuthPage() {
     setInfoMessage(neutralMessage);
 
     if (!isEmailValid) {
-      setError("Use your MTU email address (e.g. name@mtu.edu.ng). ");
+      setError("Use your MTU email address (e.g. name@mtu.edu.ng).");
       return;
     }
 
@@ -100,7 +99,7 @@ export default function AuthPage() {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-        body: JSON.stringify({ email: storedEmail, otp })
+        body: JSON.stringify({ email: storedEmail, otp }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string; nextRoute?: string };
       if (!res.ok) {
@@ -121,147 +120,153 @@ export default function AuthPage() {
     setError("");
     try {
       const res = await sendOtp(storedEmail);
-      if (!res.ok) {
-        setError("We could not resend the code. Please try again.");
-      }
+      if (!res.ok) setError("We could not resend the code. Please try again.");
     } catch {
       setError("Network error. Please try again.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-body-sm text-neutral-text-secondary">
-            MTU Secure Access
-          </div>
-          <h1 className="mt-5 text-display-lg text-white">Student Authentication</h1>
-          <p className="mt-3 text-body-lg text-neutral-text-secondary">
-            Verify your MTU email to access the premium voting experience.
-          </p>
-        </motion.div>
+    <div className="min-h-[calc(100vh-56px)] flex flex-col items-center justify-center px-4 py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="w-full max-w-sm"
+      >
+        {/* Logo + title */}
+        <div className="flex flex-col items-center mb-8">
+          <Image
+            src="/general/src-logo.png"
+            alt="MTU"
+            width={72}
+            height={72}
+            className="object-contain mb-4"
+          />
+          <h1 className="text-base font-bold text-black text-center">Student Choice Awards 2026</h1>
+          <p className="text-xs text-gray-500 mt-1 text-center">Mountain Top University</p>
+        </div>
 
-        <Card variant="glass" className="p-6 md:p-10">
+        {/* Card */}
+        <div className="border border-gray-200 bg-white">
           {/* Step indicator */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className={`flex items-center gap-2 text-body-sm font-medium transition-colors ${step === "email" ? "text-white" : "text-neutral-text-secondary"}`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-caption font-bold border transition-colors ${
-                step === "email"
-                  ? "border-primary-green bg-primary-green/10 text-primary-green"
-                  : "border-primary-green/30 bg-primary-green/5 text-primary-green/70"
-              }`}>1</span>
+          <div className="flex items-center px-6 pt-6 pb-5 border-b border-gray-100">
+            <div className={`flex items-center gap-2 text-xs font-semibold ${step === "email" ? "text-black" : "text-gray-400"}`}>
+              <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${step === "email" ? "border-black bg-black text-white" : "border-gray-200 bg-gray-50 text-gray-400"}`}>
+                1
+              </span>
               Email
             </div>
-            <div className={`flex-1 h-px transition-colors ${step === "otp" ? "bg-primary-green/30" : "bg-white/[0.08]"}`} />
-            <div className={`flex items-center gap-2 text-body-sm font-medium transition-colors ${step === "otp" ? "text-white" : "text-neutral-text-secondary"}`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-caption font-bold border transition-colors ${
-                step === "otp"
-                  ? "border-primary-green bg-primary-green/10 text-primary-green"
-                  : "border-white/[0.1] text-neutral-text-secondary"
-              }`}>2</span>
+            <div className={`flex-1 mx-3 h-px ${step === "otp" ? "bg-black" : "bg-gray-200"}`} />
+            <div className={`flex items-center gap-2 text-xs font-semibold ${step === "otp" ? "text-black" : "text-gray-400"}`}>
+              <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${step === "otp" ? "border-black bg-black text-white" : "border-gray-200 bg-gray-50 text-gray-400"}`}>
+                2
+              </span>
               Verify
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
-            {step === "email" ? (
-              <motion.form
-                key="email"
-                onSubmit={requestOtp}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                <Input
-                  label="MTU Email Address"
-                  type="email"
-                  placeholder="you@mtu.edu.ng"
-                  value={emailInput}
-                  onChange={(event) => setEmailInput(event.target.value)}
-                  required
-                />
-
-                {infoMessage && (
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-body-sm text-neutral-text-secondary">
-                    {infoMessage}
-                  </div>
-                )}
-
-                {error && (
-                  <div className="rounded-xl border border-accent-red/30 bg-accent-red/10 p-4 text-body-sm text-accent-red">
-                    {error}
-                  </div>
-                )}
-
-                <Button type="submit" size="lg" className="w-full" disabled={!isEmailValid || loading} isLoading={loading}>
-                  Send Verification Code
-                </Button>
-              </motion.form>
-            ) : (
-              <motion.div
-                key="otp"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                <div>
-                  <h2 className="text-h2 text-white mb-2">Enter the code</h2>
-                  <p className="text-body-sm text-neutral-text-secondary">
-                    We sent a 6-digit code to <span className="text-white font-semibold">{storedEmail}</span>.
-                  </p>
-                </div>
-
-                <form onSubmit={verifyOtp} className="space-y-6">
-                  <div className="py-4">
-                    <OTPInput
-                      length={6}
-                      onComplete={(value) => {
-                        setOtp(value);
-                        void verifyOtp();
-                      }}
-                      disabled={otpLoading}
+          <div className="px-6 py-6">
+            <AnimatePresence mode="wait">
+              {step === "email" ? (
+                <motion.form
+                  key="email"
+                  onSubmit={requestOtp}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
+                      MTU Email Address
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="you@mtu.edu.ng"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      required
+                      className="w-full border border-gray-300 px-4 py-2.5 text-sm text-black placeholder:text-gray-400 focus:outline-none focus:border-black transition-colors"
                     />
                   </div>
 
-                  {error && (
-                    <div className="rounded-xl border border-accent-red/30 bg-accent-red/10 p-4 text-body-sm text-accent-red">
-                      {error}
-                    </div>
+                  {infoMessage && (
+                    <p className="text-xs text-gray-500">{infoMessage}</p>
                   )}
 
-                  <Button type="submit" size="lg" className="w-full" disabled={otp.length !== 6 || otpLoading} isLoading={otpLoading}>
-                    Verify & Continue
-                  </Button>
-                </form>
+                  {error && (
+                    <p className="text-xs text-red-600">{error}</p>
+                  )}
 
-                <div className="flex items-center justify-between text-body-sm text-neutral-text-secondary">
-                  <button
-                    type="button"
-                    onClick={() => setStep("email")}
-                    className="text-white hover:text-primary-green"
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full"
+                    disabled={!isEmailValid || loading}
+                    isLoading={loading}
                   >
-                    Change email
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resendOtp}
-                    className="text-white hover:text-primary-green"
-                  >
-                    Resend code
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Card>
-      </div>
+                    Send Verification Code
+                  </Button>
+                </motion.form>
+              ) : (
+                <motion.div
+                  key="otp"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-black mb-1">Enter the 6-digit code</p>
+                    <p className="text-xs text-gray-500">
+                      Sent to <span className="font-semibold text-black">{storedEmail}</span>
+                    </p>
+                  </div>
+
+                  <form onSubmit={verifyOtp} className="space-y-4">
+                    <div className="py-2">
+                      <OTPInput
+                        length={6}
+                        onComplete={(value) => {
+                          setOtp(value);
+                          void verifyOtp();
+                        }}
+                        disabled={otpLoading}
+                      />
+                    </div>
+
+                    {error && (
+                      <p className="text-xs text-red-600">{error}</p>
+                    )}
+
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full"
+                      disabled={otp.length !== 6 || otpLoading}
+                      isLoading={otpLoading}
+                    >
+                      Verify & Continue
+                    </Button>
+                  </form>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
+                    <button type="button" onClick={() => setStep("email")} className="hover:text-black underline underline-offset-2">
+                      Change email
+                    </button>
+                    <button type="button" onClick={resendOtp} className="hover:text-black underline underline-offset-2">
+                      Resend code
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
