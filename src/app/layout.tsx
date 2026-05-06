@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="font-sans bg-white">
+      <body className="font-sans bg-gray-50">
         <Providers>
-          <header className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-6 bg-white border-b border-gray-200">
+          <header className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-6 bg-white/90 backdrop-blur-sm border-b border-gray-200/80 shadow-sm">
             <Link href="/auth" className="flex items-center gap-3">
               <Image
                 src="/general/src-logo.png"

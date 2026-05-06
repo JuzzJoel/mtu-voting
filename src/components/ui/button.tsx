@@ -29,7 +29,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "font-semibold rounded-none transition-all duration-150 font-sans flex items-center justify-center gap-2 relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed";
+      "font-semibold rounded-md transition-all duration-150 font-sans flex items-center justify-center gap-2 relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed";
 
     const sizeStyles = {
       sm: "px-4 py-2 text-xs h-8",

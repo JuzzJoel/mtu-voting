@@ -21,7 +21,7 @@ html {
 }
 
 body {
-  @apply bg-white text-gray-900 font-sans min-h-screen;
+  @apply bg-gray-50 text-gray-900 font-sans min-h-screen;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

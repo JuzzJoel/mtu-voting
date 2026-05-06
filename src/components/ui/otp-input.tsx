@@ -61,13 +61,11 @@ export const OTPInput: React.FC<OTPInputProps> = ({
   }, [disabled]);
 
   return (
-    <div className="flex gap-2 sm:gap-3 justify-center w-full">
+    <div className="flex gap-2 justify-center w-full">
       {Array.from({ length }).map((_, index) => (
         <motion.input
           key={index}
-          ref={(el) => {
-            inputRefs.current[index] = el;
-          }}
+          ref={(el) => { inputRefs.current[index] = el; }}
           type="text"
           inputMode="numeric"
           pattern="[0-9]"
@@ -77,14 +75,18 @@ export const OTPInput: React.FC<OTPInputProps> = ({
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={index === 0 ? handlePaste : undefined}
           disabled={disabled}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.15, delay: index * 0.03 }}
-          className="w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold text-black
-                     bg-white border border-gray-300 rounded-none
-                     focus:outline-none focus:border-black focus:ring-0
-                     transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
-                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.15, delay: index * 0.04 }}
+          className={`
+            w-11 h-14 text-center text-2xl font-bold text-black
+            bg-white border-2 rounded-md
+            focus:outline-none transition-all duration-150
+            disabled:opacity-40 disabled:cursor-not-allowed
+            [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
+            ${values[index] ? "border-black bg-gray-50" : "border-gray-200"}
+          `}
+          style={{ caretColor: "transparent" }}
         />
       ))}
     </div>

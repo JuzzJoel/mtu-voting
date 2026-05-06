@@ -4,6 +4,17 @@ const config: Config = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   darkMode: ['class'],
   theme: {
+    borderRadius: {
+      none: '0px',
+      sm: '0px',
+      DEFAULT: '0px',
+      md: '0px',
+      lg: '0px',
+      xl: '0px',
+      '2xl': '0px',
+      '3xl': '0px',
+      full: '9999px',
+    },
     extend: {
       colors: {
         // Primary Colors - Green + Purple
@@ -49,22 +60,10 @@ const config: Config = {
         'body-sm': ['14px', { lineHeight: '1.5', fontWeight: '400' }],
         caption: ['12px', { lineHeight: '1.4', fontWeight: '500' }],
       },
-      borderRadius: {
-        none: '0px',
-        sm: '0px',
-        DEFAULT: '0px',
-        md: '0px',
-        lg: '0px',
-        xl: '0px',
-        '2xl': '0px',
-        '3xl': '0px',
-        full: '9999px',
-      },
       boxShadow: {
-        card: '0 18px 50px rgba(2, 6, 23, 0.45)',
-        'glow-purple': '0 0 24px rgba(99, 102, 241, 0.35)',
-        'glow-purple-xl': '0 0 40px rgba(99, 102, 241, 0.4)',
-        'glow-green': '0 0 26px rgba(20, 184, 166, 0.4)',
+        card: '0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)',
+        'card-lg': '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+        'focus': '0 0 0 3px rgba(0,0,0,0.08)',
       },
       letterSpacing: {
         display: '-0.03em',
