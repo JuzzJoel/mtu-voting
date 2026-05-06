@@ -61,6 +61,10 @@ const config: Config = {
         'glow-purple-xl': '0 0 40px rgba(99, 102, 241, 0.4)',
         'glow-green': '0 0 26px rgba(20, 184, 166, 0.4)',
       },
+      letterSpacing: {
+        display: '-0.03em',
+        heading: '-0.02em',
+      },
       animation: {
         'pulse-border': 'pulse-border 2s ease-in-out infinite',
         'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
@@ -68,6 +72,7 @@ const config: Config = {
         'category-collapse': 'category-collapse 0.4s ease-out forwards',
         'fade-slide-up': 'fade-slide-up 0.4s ease-out forwards',
         'scale-in': 'scale-in 0.3s ease-out forwards',
+        'float': 'float 4s ease-in-out infinite',
       },
       keyframes: {
         'pulse-border': {
@@ -99,6 +104,10 @@ const config: Config = {
         'scale-in': {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
         },
       },
       backgroundImage: {

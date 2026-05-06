@@ -39,9 +39,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "bg-gradient-to-r from-primary-green to-primary-purple text-white hover:shadow-glow-purple-xl hover:scale-[1.02] border border-transparent",
+        "bg-gradient-to-r from-primary-green to-primary-purple text-white hover:shadow-glow-purple-xl border border-transparent btn-shimmer",
       secondary:
-        "bg-transparent border border-white/20 text-white hover:bg-white/10 hover:border-white/40",
+        "bg-transparent border border-white/[0.18] text-white hover:bg-white/[0.08] hover:border-white/35",
       tertiary:
         "bg-neutral-surface-dark/80 border border-neutral-border text-neutral-text-primary hover:bg-neutral-card-dark hover:border-primary-purple/60",
       ghost:
@@ -59,10 +59,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
       >
         {isLoading ? (
-          <>
-            <span className="inline-block animate-spin">⟳</span>
-            <span>Processing...</span>
-          </>
+          <span className="flex items-center gap-1.5">
+            {[0, 150, 300].map((delay) => (
+              <span
+                key={delay}
+                className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce"
+                style={{ animationDelay: `${delay}ms` }}
+              />
+            ))}
+          </span>
         ) : (
           <>
             {icon}

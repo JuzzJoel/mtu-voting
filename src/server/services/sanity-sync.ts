@@ -21,8 +21,6 @@ export async function syncSanityContent() {
     categoriesWithNomineesQuery
   )
 
-  const categoryIdMap = new Map<string, string>()
-
   for (const category of categories) {
     const record = await prisma.category.upsert({
       where: { sanityId: category._id },
@@ -39,8 +37,6 @@ export async function syncSanityContent() {
       },
       select: { id: true },
     })
-
-    categoryIdMap.set(category._id, record.id)
 
     for (const nominee of category.nominees) {
       await prisma.contestant.upsert({

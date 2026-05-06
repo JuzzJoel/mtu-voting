@@ -23,14 +23,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const baseStyles =
-      "w-full rounded-md border transition-all duration-fast text-body-md";
+      "w-full rounded-xl border transition-all duration-fast text-body-md";
 
-    const focusStyles = "focus:outline-none focus:ring-4 focus:ring-primary-purple/25 focus:border-primary-purple";
+    const focusStyles = "focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary-purple/60";
 
-    const defaultStyles = `bg-neutral-surface-dark/50 border-neutral-border text-neutral-text-primary placeholder-neutral-text-secondary ${focusStyles}`;
+    const defaultStyles = `bg-white/[0.04] border-white/[0.1] text-neutral-text-primary placeholder:text-neutral-text-secondary/50 px-4 py-3 hover:border-white/20 ${focusStyles}`;
 
     const otpStyles =
-      "w-12 h-12 text-center text-h3 font-bold bg-neutral-card-dark border-neutral-border animate-pulse-border focus:animate-none";
+      "w-12 h-12 text-center text-h3 font-bold bg-white/[0.04] border-white/[0.1] animate-pulse-border focus:animate-none focus:border-primary-green/60 focus:ring-2 focus:ring-primary-green/20";
 
     const containerClass = `relative ${icon ? "flex items-center" : ""}`;
 

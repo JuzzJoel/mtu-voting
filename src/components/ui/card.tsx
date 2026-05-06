@@ -29,9 +29,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       default:
         "bg-neutral-card-dark border-neutral-border/70 shadow-card",
       glass:
-        "bg-white/5 backdrop-blur-glass border border-white/15 shadow-lg",
+        "bg-white/[0.04] backdrop-blur-glass border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),_0_24px_64px_rgba(0,0,0,0.4)]",
       dark:
-        "bg-neutral-surface-dark/90 border-neutral-border/60",
+        "bg-neutral-surface-dark/90 border-neutral-border/50",
     };
 
     const glowStyles = {

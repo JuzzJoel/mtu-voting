@@ -20,9 +20,17 @@ html {
 
 body {
   @apply min-h-screen bg-neutral-bg-dark text-neutral-text-primary font-sans;
-  background-image: radial-gradient(circle at top, rgba(20, 184, 166, 0.2), transparent 45%),
-    radial-gradient(circle at 70% 10%, rgba(99, 102, 241, 0.2), transparent 40%),
-    radial-gradient(circle at 50% 80%, rgba(56, 189, 248, 0.12), transparent 55%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-image: radial-gradient(circle at top, rgba(20, 184, 166, 0.18), transparent 45%),
+    radial-gradient(circle at 70% 10%, rgba(99, 102, 241, 0.18), transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(56, 189, 248, 0.1), transparent 55%);
+}
+
+::selection {
+  background: rgba(20, 184, 166, 0.25);
+  color: #F8FAFC;
 }
 
 /* Typography */
@@ -48,11 +56,43 @@ body {
 @layer components {
   /* Glassmorphism cards */
   .glass {
-    @apply bg-white/5 backdrop-blur-glass border border-white/10 rounded-lg;
+    @apply bg-white/[0.04] backdrop-blur-glass border border-white/[0.08] rounded-2xl;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 24px 64px rgba(0, 0, 0, 0.4);
   }
 
   .gradient-text {
     @apply bg-gradient-to-r from-primary-green to-primary-purple bg-clip-text text-transparent;
+  }
+
+  /* Gradient border utility */
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.5), rgba(99, 102, 241, 0.5));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Button shimmer sweep */
+  .btn-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-110%) skewX(-20deg);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: transform 0.7s ease-in-out;
+    pointer-events: none;
+  }
+  .btn-shimmer:hover::after {
+    transform: translateX(110%) skewX(-20deg);
   }
 
   /* Focus ring */

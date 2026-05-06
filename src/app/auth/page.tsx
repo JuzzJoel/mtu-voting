@@ -147,9 +147,25 @@ export default function AuthPage() {
         </motion.div>
 
         <Card variant="glass" className="p-6 md:p-10">
-          <div className="flex items-center justify-between text-body-sm text-neutral-text-secondary mb-6">
-            <span className={step === "email" ? "text-white" : ""}>1. Email</span>
-            <span className={step === "otp" ? "text-white" : ""}>2. Verify OTP</span>
+          {/* Step indicator */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className={`flex items-center gap-2 text-body-sm font-medium transition-colors ${step === "email" ? "text-white" : "text-neutral-text-secondary"}`}>
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-caption font-bold border transition-colors ${
+                step === "email"
+                  ? "border-primary-green bg-primary-green/10 text-primary-green"
+                  : "border-primary-green/30 bg-primary-green/5 text-primary-green/70"
+              }`}>1</span>
+              Email
+            </div>
+            <div className={`flex-1 h-px transition-colors ${step === "otp" ? "bg-primary-green/30" : "bg-white/[0.08]"}`} />
+            <div className={`flex items-center gap-2 text-body-sm font-medium transition-colors ${step === "otp" ? "text-white" : "text-neutral-text-secondary"}`}>
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-caption font-bold border transition-colors ${
+                step === "otp"
+                  ? "border-primary-green bg-primary-green/10 text-primary-green"
+                  : "border-white/[0.1] text-neutral-text-secondary"
+              }`}>2</span>
+              Verify
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
