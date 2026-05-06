@@ -6,7 +6,12 @@ export type CategoryResponse = {
   id: string
   name: string
   order: number
-  nominees: { id: string; name: string; imageUrl: string; description: string | null }[]
+  nominees: {
+    id: string
+    name: string
+    imageUrl: string
+    description: string | null
+  }[]
 }
 
 export async function listCategoriesForUser(userId: string) {

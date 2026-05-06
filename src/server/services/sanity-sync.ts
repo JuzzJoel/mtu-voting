@@ -1,27 +1,27 @@
-import { prisma } from "@/lib/db/prisma";
-import { sanityClient } from "@/lib/sanity/client";
-import { categoriesWithNomineesQuery } from "@/lib/sanity/queries";
+import { prisma } from '@/lib/db/prisma'
+import { sanityClient } from '@/lib/sanity/client'
+import { categoriesWithNomineesQuery } from '@/lib/sanity/queries'
 
 type SanityNominee = {
-  _id: string;
-  name: string;
-  imageUrl: string;
-  description?: string | null;
-};
+  _id: string
+  name: string
+  imageUrl: string
+  description?: string | null
+}
 
 type SanityCategory = {
-  _id: string;
-  name: string;
-  order: number;
-  nominees: SanityNominee[];
-};
+  _id: string
+  name: string
+  order: number
+  nominees: SanityNominee[]
+}
 
 export async function syncSanityContent() {
   const categories = await sanityClient.fetch<SanityCategory[]>(
     categoriesWithNomineesQuery
-  );
+  )
 
-  const categoryIdMap = new Map<string, string>();
+  const categoryIdMap = new Map<string, string>()
 
   for (const category of categories) {
     const record = await prisma.category.upsert({
@@ -29,18 +29,18 @@ export async function syncSanityContent() {
       update: {
         title: category.name,
         order: category.order,
-        isActive: true
+        isActive: true,
       },
       create: {
         sanityId: category._id,
         title: category.name,
         order: category.order,
-        isActive: true
+        isActive: true,
       },
-      select: { id: true }
-    });
+      select: { id: true },
+    })
 
-    categoryIdMap.set(category._id, record.id);
+    categoryIdMap.set(category._id, record.id)
 
     for (const nominee of category.nominees) {
       await prisma.contestant.upsert({
@@ -49,16 +49,16 @@ export async function syncSanityContent() {
           name: nominee.name,
           imageUrl: nominee.imageUrl,
           description: nominee.description ?? null,
-          categoryId: record.id
+          categoryId: record.id,
         },
         create: {
           sanityId: nominee._id,
           name: nominee.name,
           imageUrl: nominee.imageUrl,
           description: nominee.description ?? null,
-          categoryId: record.id
-        }
-      });
+          categoryId: record.id,
+        },
+      })
     }
   }
 }

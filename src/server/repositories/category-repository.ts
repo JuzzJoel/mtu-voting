@@ -4,7 +4,12 @@ export type CategoryRecord = {
   id: string
   title: string
   order: number
-  contestants: { id: string; name: string; imageUrl: string; description: string | null }[]
+  contestants: {
+    id: string
+    name: string
+    imageUrl: string
+    description: string | null
+  }[]
 }
 
 export async function getActiveCategories(excludedCategoryIds: string[]) {

@@ -1,4 +1,4 @@
-import category from "./category";
-import nominee from "./nominee";
+import category from './category'
+import nominee from './nominee'
 
-export const schemaTypes = [category, nominee];
+export const schemaTypes = [category, nominee]
