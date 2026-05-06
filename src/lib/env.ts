@@ -7,13 +7,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   APP_ORIGIN: z.string().url('APP_ORIGIN must be a valid URL'),
-  SMTP_HOST: z.string().min(1, 'SMTP_HOST is required'),
-  SMTP_PORT: z.coerce.number().int().positive(),
-  SMTP_SECURE: z
-    .string()
-    .transform((value) => value === 'true')
-    .pipe(z.boolean()),
-  SMTP_USER: z.string().min(1, 'SMTP_USER is required'),
+  SMTP_USER: z.string().email('SMTP_USER must be a valid email'),
   SMTP_PASS: z.string().min(1, 'SMTP_PASS is required'),
   SMTP_FROM: z.string().min(1, 'SMTP_FROM is required'),
   UPSTASH_REDIS_REST_URL: z

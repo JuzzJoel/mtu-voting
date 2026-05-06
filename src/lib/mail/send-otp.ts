@@ -2,37 +2,38 @@ import nodemailer from "nodemailer";
 import { env } from "@/lib/env";
 
 const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: env.SMTP_SECURE,
+  host: "smtp.resend.com",
+  port: 465,
+  secure: true,
   auth: {
-    user: env.SMTP_USER,
-    pass: env.SMTP_PASS
-  }
+    user: "resend",
+    pass: env.RESEND_API_KEY,
+  },
 });
 
 export async function sendOtpEmail(email: string, otp: string) {
   await transporter.sendMail({
-    from: env.SMTP_FROM,
+    from: env.RESEND_FROM,
     to: email,
-    subject: "Authentication Code - Mountain Top University Voting Portal",
-    text: `Dear Student,\n\nYour one-time authentication code for the Mountain Top University Voting Portal is: ${otp}\n\nThis code will expire in 10 minutes. For security reasons, please do not share this code with anyone.\n\nBest regards,\nMTU Electoral Committee`,
+    subject: "Your MTU Voting Portal Code",
+    text: `Your one-time code is: ${otp}\n\nIt expires in 10 minutes. Do not share it with anyone.\n\n— MTU Electoral Committee`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-        <div style="background-color: #1A1025; padding: 20px; text-align: center;">
-          <h2 style="color: #ffffff; margin: 0;">MTU Voting Portal</h2>
+      <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; border: 1px solid #e5e7eb;">
+        <div style="background: #000; padding: 20px 28px;">
+          <p style="color: #fff; font-size: 13px; font-weight: 700; margin: 0; letter-spacing: 0.05em;">MTU VOTING PORTAL</p>
         </div>
-        <div style="padding: 30px; background-color: #ffffff;">
-          <p style="font-size: 16px; color: #333333; margin-top: 0;">Dear Student/Staff,</p>
-          <p style="font-size: 16px; color: #333333;">Your one-time authentication code for the Mountain Top University Voting Portal is:</p>
-          <div style="background-color: #f4f4f4; border-radius: 6px; padding: 15px; text-align: center; margin: 25px 0;">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4A3E59;">${otp}</span>
+        <div style="padding: 32px 28px; background: #fff;">
+          <p style="font-size: 14px; color: #374151; margin: 0 0 20px;">Your one-time verification code is:</p>
+          <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 20px; text-align: center; margin: 0 0 24px;">
+            <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #000;">${otp}</span>
           </div>
-          <p style="font-size: 14px; color: #666666;">This code will expire in <strong>10 minutes</strong>. For security reasons, please do not share this code with anyone.</p>
-          <hr style="border: none; border-top: 1px solid #eeeeee; margin: 30px 0;" />
-          <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">Best regards,<br/><strong>MTU Electoral Committee</strong></p>
+          <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px;">This code expires in <strong>10 minutes</strong>.</p>
+          <p style="font-size: 13px; color: #6b7280; margin: 0;">Do not share this code with anyone.</p>
+        </div>
+        <div style="padding: 16px 28px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 12px; color: #9ca3af; margin: 0;">Mountain Top University — Student Choice Awards 2026</p>
         </div>
       </div>
-    `
+    `,
   });
 }

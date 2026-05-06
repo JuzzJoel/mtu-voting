@@ -24,7 +24,10 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [csrfToken, setCsrfToken] = useState("");
 
+  const [touched, setTouched] = useState(false);
+
   const isEmailValid = useMemo(() => mtuEmailRegex.test(emailInput.trim().toLowerCase()), [emailInput]);
+  const showEmailError = touched && emailInput.trim().length > 0 && !isEmailValid;
 
   useEffect(() => {
     void fetch("/api/auth/csrf")
@@ -63,10 +66,9 @@ export default function AuthPage() {
   const requestOtp = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
-    setInfoMessage(neutralMessage);
+    setTouched(true);
 
     if (!isEmailValid) {
-      setError("Use your MTU email address (e.g. name@mtu.edu.ng).");
       return;
     }
 
@@ -80,6 +82,7 @@ export default function AuthPage() {
         setError("We could not send the code. Please try again.");
         return;
       }
+      setInfoMessage(neutralMessage);
       setStep("otp");
     } catch {
       setError("Network error. Please try again.");
@@ -186,10 +189,13 @@ export default function AuthPage() {
                       type="email"
                       placeholder="you@mtu.edu.ng"
                       value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
+                      onChange={(e) => { setEmailInput(e.target.value); setTouched(true); }}
                       required
-                      className="w-full border border-gray-300 px-4 py-2.5 text-sm text-black placeholder:text-gray-400 focus:outline-none focus:border-black transition-colors"
+                      className={`w-full border px-4 py-2.5 text-sm text-black placeholder:text-gray-400 focus:outline-none transition-colors ${showEmailError ? "border-red-400 focus:border-red-400" : "border-gray-300 focus:border-black"}`}
                     />
+                    {showEmailError && (
+                      <p className="text-xs text-red-500 mt-1.5">Please use your MTU email (@mtu.edu.ng)</p>
+                    )}
                   </div>
 
                   {infoMessage && (
