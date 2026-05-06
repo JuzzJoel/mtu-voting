@@ -4,7 +4,7 @@ export type CategoryRecord = {
   id: string
   title: string
   order: number
-  contestants: { id: string; name: string; imageUrl: string }[]
+  contestants: { id: string; name: string; imageUrl: string; description: string | null }[]
 }
 
 export async function getActiveCategories(excludedCategoryIds: string[]) {
@@ -17,7 +17,7 @@ export async function getActiveCategories(excludedCategoryIds: string[]) {
     },
     include: {
       contestants: {
-        select: { id: true, name: true, imageUrl: true },
+        select: { id: true, name: true, imageUrl: true, description: true },
       },
     },
     orderBy: { order: 'asc' },

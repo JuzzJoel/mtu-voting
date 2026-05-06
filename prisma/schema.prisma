@@ -44,6 +44,7 @@ model OtpCode {
 
 model Category {
   id          String       @id @default(cuid())
+  sanityId    String       @unique
   title       String       @unique
   order       Int          @default(0)
   isActive    Boolean      @default(true)
@@ -54,6 +55,7 @@ model Category {
 
 model Contestant {
   id         String    @id @default(cuid())
+  sanityId   String    @unique
   categoryId String
   category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   name       String
