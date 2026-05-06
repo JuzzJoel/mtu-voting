@@ -2,18 +2,18 @@ import nodemailer from "nodemailer";
 import { env } from "@/lib/env";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.resend.com",
-  port: 465,
-  secure: true,
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   auth: {
-    user: "resend",
-    pass: env.RESEND_API_KEY,
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASS,
   },
 });
 
 export async function sendOtpEmail(email: string, otp: string) {
   await transporter.sendMail({
-    from: env.RESEND_FROM,
+    from: env.SMTP_FROM,
     to: email,
     subject: "Your MTU Voting Portal Code",
     text: `Your one-time code is: ${otp}\n\nIt expires in 10 minutes. Do not share it with anyone.\n\n— MTU Electoral Committee`,

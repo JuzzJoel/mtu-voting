@@ -80,7 +80,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.15, delay: index * 0.03 }}
-          className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl font-bold
+          className="w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold text-black
                      bg-white border border-gray-300 rounded-none
                      focus:outline-none focus:border-black focus:ring-0
                      transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
