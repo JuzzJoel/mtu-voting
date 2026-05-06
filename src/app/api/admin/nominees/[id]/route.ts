@@ -8,12 +8,13 @@ import { nomineeUpdateSchema } from '@/server/validators/admin'
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin(req)
+    const { id } = await context.params
     const body = nomineeUpdateSchema.parse(await req.json())
-    const nominee = await updateAdminNominee(context.params.id, body)
+    const nominee = await updateAdminNominee(id, body)
     return NextResponse.json({ nominee })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request'
@@ -23,11 +24,12 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin(req)
-    await deleteAdminNominee(context.params.id)
+    const { id } = await context.params
+    await deleteAdminNominee(id)
     return NextResponse.json({ ok: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request'

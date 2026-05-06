@@ -19,7 +19,7 @@ export async function createSession(payload: SessionPayload) {
   const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("30m")
     .sign(getSecret());
 
   const cookieStore = await cookies();
@@ -28,7 +28,7 @@ export async function createSession(payload: SessionPayload) {
     sameSite: "strict",
     secure: env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7
+    maxAge: 60 * 30,
   });
 }
 

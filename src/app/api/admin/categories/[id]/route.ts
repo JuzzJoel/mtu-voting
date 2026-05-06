@@ -8,12 +8,13 @@ import { categoryUpdateSchema } from '@/server/validators/admin'
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin(req)
+    const { id } = await context.params
     const body = categoryUpdateSchema.parse(await req.json())
-    const category = await updateAdminCategory(context.params.id, body)
+    const category = await updateAdminCategory(id, body)
     return NextResponse.json({ category })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request'
@@ -23,11 +24,12 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin(req)
-    await deleteAdminCategory(context.params.id)
+    const { id } = await context.params
+    await deleteAdminCategory(id)
     return NextResponse.json({ ok: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request'

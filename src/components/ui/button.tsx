@@ -8,6 +8,7 @@ export interface ButtonProps {
   icon?: React.ReactNode;
   disabled?: boolean;
   className?: string;
+  style?: React.CSSProperties;
   children?: React.ReactNode;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   type?: "button" | "submit" | "reset";
@@ -23,6 +24,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled = false,
       icon,
       children,
+      style,
       onClick,
       type = "button",
     },
@@ -50,6 +52,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
         className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+        style={style}
         disabled={disabled || isLoading}
         onClick={onClick}
         type={type}

@@ -1,60 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { randomUUID } from 'crypto'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { requireAdmin } from '@/lib/auth/guards'
-import { env } from '@/lib/env'
-import { uploadRequestSchema } from '@/server/validators/admin'
+import { NextRequest, NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
+import { requireAdmin } from "@/lib/auth/guards";
+import { env } from "@/lib/env";
 
-function getS3Client() {
-  if (
-    !env.S3_REGION ||
-    !env.S3_BUCKET ||
-    !env.S3_ACCESS_KEY_ID ||
-    !env.S3_SECRET_ACCESS_KEY
-  ) {
-    throw new Error('Missing storage configuration.')
-  }
-
-  return new S3Client({
-    region: env.S3_REGION,
-    credentials: {
-      accessKeyId: env.S3_ACCESS_KEY_ID,
-      secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-    },
-    endpoint: env.S3_ENDPOINT || undefined,
-  })
-}
+cloudinary.config({
+  cloud_name: env.CLOUDINARY_CLOUD_NAME,
+  api_key: env.CLOUDINARY_API_KEY,
+  api_secret: env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin(req)
-    const body = uploadRequestSchema.parse(await req.json())
+    await requireAdmin(req);
 
-    if (!env.S3_PUBLIC_BASE_URL) {
-      return NextResponse.json(
-        { error: 'Missing public storage URL.' },
-        { status: 500 }
-      )
-    }
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+    if (!file) return NextResponse.json({ error: "No file provided." }, { status: 400 });
 
-    const extension = body.fileName.split('.').pop() || 'jpg'
-    const objectKey = `nominees/${randomUUID()}.${extension}`
-    const s3 = getS3Client()
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    const command = new PutObjectCommand({
-      Bucket: env.S3_BUCKET,
-      Key: objectKey,
-      ContentType: body.fileType,
-    })
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: "mtu-nominees",
+      transformation: [{ width: 800, height: 1000, crop: "fill", gravity: "face" }],
+    });
 
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 })
-    const publicUrl = `${env.S3_PUBLIC_BASE_URL.replace(/\/$/, '')}/${objectKey}`
-
-    return NextResponse.json({ uploadUrl, publicUrl })
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Upload not configured.'
-    return NextResponse.json({ error: message }, { status: 400 })
+    return NextResponse.json({ url: result.secure_url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Upload failed.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
