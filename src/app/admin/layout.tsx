@@ -2,15 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { ReactNode } from "react";
 import { requireAdmin } from "@/lib/auth/guards";
+import { AdminLogoutButton } from "./_components/logout-button";
 
 const BG = "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)";
-const ACCENT = "linear-gradient(135deg, #6366f1, #8b5cf6)";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   await requireAdmin();
 
   return (
-    <div className="min-h-screen flex relative" style={{ background: BG }}>
+    <div className="h-screen overflow-hidden flex relative" style={{ background: BG }}>
       {/* Dot pattern */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
       {/* Desktop sidebar */}
       <aside
-        className="hidden lg:flex flex-col w-56 min-h-screen flex-shrink-0 border-r relative z-10"
+        className="hidden lg:flex flex-col w-56 h-full flex-shrink-0 border-r relative z-10 overflow-y-auto"
         style={{ background: "rgba(0,0,0,0.28)", borderColor: "rgba(255,255,255,0.08)" }}
       >
         <div className="px-5 py-5 border-b flex-shrink-0" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
@@ -61,8 +61,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </Link>
         </nav>
 
-        <div className="px-5 py-4 border-t flex-shrink-0" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-          <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>Admin access only</p>
+        <div className="px-5 py-4 border-t flex-shrink-0 space-y-2" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+          <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>Admin access only</p>
+          <AdminLogoutButton />
         </div>
       </aside>
 
@@ -76,16 +77,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <Link href="/admin" className="text-xs mr-3 transition-colors" style={{ color: "rgba(255,255,255,0.6)" }}>
           Nominees
         </Link>
-        <Link href="/admin/dashboard" className="text-xs transition-colors" style={{ color: "rgba(255,255,255,0.6)" }}>
+        <Link href="/admin/dashboard" className="text-xs mr-3 transition-colors" style={{ color: "rgba(255,255,255,0.6)" }}>
           Results
         </Link>
+        <AdminLogoutButton />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 relative z-10 pt-16 lg:pt-0">
-        <div className="px-5 py-8 max-w-5xl mx-auto lg:px-8">
-          {children}
-        </div>
+      <div className="flex-1 relative z-10 pt-16 lg:pt-0 overflow-y-auto flex flex-col">
+        {children}
       </div>
     </div>
   );

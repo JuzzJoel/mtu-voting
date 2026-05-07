@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { requireAdmin } from '@/lib/auth/guards'
 import {
   createAdminNominee,
@@ -23,6 +24,12 @@ export async function POST(req: NextRequest) {
     const nominee = await createAdminNominee(body)
     return NextResponse.json({ nominee })
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'A nominee with that name already exists in this category.' },
+        { status: 409 }
+      )
+    }
     const message = error instanceof Error ? error.message : 'Invalid request'
     return NextResponse.json({ error: message }, { status: 400 })
   }

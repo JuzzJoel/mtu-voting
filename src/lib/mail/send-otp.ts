@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import { env } from "@/lib/env";
 
+const DEV_MODE = process.env.MAIL_DEV === "true" || process.env.NODE_ENV === "development";
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -12,6 +14,14 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendOtpEmail(email: string, otp: string) {
+  if (DEV_MODE) {
+    console.log("\n┌─────────────────────────────────────┐");
+    console.log(`│  OTP for ${email.padEnd(27)}│`);
+    console.log(`│  Code: \x1b[1;33m${otp}\x1b[0m                             │`);
+    console.log("└─────────────────────────────────────┘\n");
+    return;
+  }
+
   const info = await transporter.sendMail({
     from: env.SMTP_FROM,
     to: email,

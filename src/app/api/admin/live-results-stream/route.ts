@@ -4,6 +4,13 @@ import { requireAdmin } from '@/lib/auth/guards'
 
 export const dynamic = 'force-dynamic'
 
+type CategoryTotal = {
+  categoryId: string
+  title: string
+  order: number
+  totalVotes: number
+}
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req)
@@ -16,7 +23,7 @@ export async function GET(req: NextRequest) {
     })
 
     const encoder = new TextEncoder()
-    const customReadable = new ReadableStream({
+    const stream = new ReadableStream({
       async start(controller) {
         let closed = false
 
@@ -29,69 +36,35 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        const fetchData = async () => {
-          const grouped = await prisma.vote.groupBy({
-            by: ['categoryId', 'contestantId'],
-            _count: { _all: true },
-          })
+        const fetchTotals = async (): Promise<CategoryTotal[]> => {
+          const [categories, grouped] = await Promise.all([
+            prisma.category.findMany({
+              where: { isActive: true },
+              select: { id: true, title: true, order: true },
+              orderBy: { order: 'asc' },
+            }),
+            prisma.vote.groupBy({
+              by: ['categoryId'],
+              _count: { _all: true },
+            }),
+          ])
 
-          const contestantIds = [...new Set(grouped.map((g) => g.contestantId))]
-          const categoryIds = [...new Set(grouped.map((g) => g.categoryId))]
-          const contestants = await prisma.contestant.findMany({
-            where: { id: { in: contestantIds } },
-            select: { id: true, name: true },
-          })
-          const categories = await prisma.category.findMany({
-            where: { id: { in: categoryIds } },
-            select: { id: true, title: true },
-          })
+          const countMap = Object.fromEntries(grouped.map((g) => [g.categoryId, g._count._all]))
 
-          const contestantMap = Object.fromEntries(contestants.map((c) => [c.id, c]))
-          const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]))
-
-          const totals = grouped.map((row) => ({
-            categoryId: row.categoryId,
-            categoryTitle: categoryMap[row.categoryId]?.title ?? 'Unknown',
-            contestantId: row.contestantId,
-            contestantName: contestantMap[row.contestantId]?.name ?? 'Unknown',
-            votes: row._count._all,
+          return categories.map((c) => ({
+            categoryId: c.id,
+            title: c.title,
+            order: c.order,
+            totalVotes: countMap[c.id] ?? 0,
           }))
-
-          const byLevelDepartment = await prisma.$queryRaw<
-            Array<{
-              category: string
-              contestant: string
-              level: string | null
-              department: string | null
-              votes: bigint
-            }>
-          >`SELECT c.title AS category, ct.name AS contestant, u.level AS level, u.department AS department, COUNT(v.id) AS votes
-            FROM "Vote" v
-            JOIN "Contestant" ct ON v."contestantId" = ct.id
-            JOIN "Category" c ON v."categoryId" = c.id
-            JOIN "User" u ON v."userId" = u.id
-            GROUP BY c.title, ct.name, u.level, u.department
-            ORDER BY c.title, votes DESC`
-
-          return {
-            totals,
-            byLevelDepartment: byLevelDepartment.map((row) => ({
-              ...row,
-              votes: Number(row.votes),
-            })),
-          }
         }
 
         try {
-          send(await fetchData())
+          send(await fetchTotals())
 
           const interval = setInterval(async () => {
             if (closed) { clearInterval(interval); return }
-            try {
-              send(await fetchData())
-            } catch (err) {
-              console.error('Error fetching data in SSE:', err)
-            }
+            try { send(await fetchTotals()) } catch {}
           }, 3000)
 
           req.signal.addEventListener('abort', () => {
@@ -100,18 +73,15 @@ export async function GET(req: NextRequest) {
             try { controller.close() } catch {}
           })
         } catch (err) {
-          console.error('SSE Error:', err)
+          console.error('SSE error:', err)
           closed = true
           try { controller.close() } catch {}
         }
       },
     })
 
-    return new NextResponse(customReadable, { headers })
-  } catch (error) {
-    if (error instanceof Error && error.message === 'Forbidden') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    return new NextResponse(stream, { headers })
+  } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 }
