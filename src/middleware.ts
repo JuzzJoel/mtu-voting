@@ -24,6 +24,19 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/admin") ||
     path.startsWith("/onboarding");
 
+  const isAuth = path === "/auth";
+
+  if (isAuth) {
+    if (token) {
+      const payload = await verifySession(token);
+      if (payload) {
+        const dest = payload.role === "ADMIN" ? "/admin" : "/vote";
+        return NextResponse.redirect(new URL(dest, req.url));
+      }
+    }
+    return NextResponse.next();
+  }
+
   if (!isProtected) return NextResponse.next();
 
   if (!token) return NextResponse.redirect(new URL("/auth", req.url));
@@ -38,5 +51,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/onboarding/:path*", "/vote/:path*", "/success", "/admin/:path*"],
+  matcher: ["/auth", "/onboarding/:path*", "/vote/:path*", "/success", "/admin/:path*"],
 };

@@ -3,8 +3,8 @@ import { env } from "@/lib/env";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  port: 465,
+  secure: true,
   auth: {
     user: env.SMTP_USER,
     pass: env.SMTP_PASS,
@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendOtpEmail(email: string, otp: string) {
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: env.SMTP_FROM,
     to: email,
     subject: "Your MTU Voting Portal Code",
@@ -36,4 +36,5 @@ export async function sendOtpEmail(email: string, otp: string) {
       </div>
     `,
   });
+  console.log(`[mail] OTP sent to ${email} — messageId: ${info.messageId}`);
 }

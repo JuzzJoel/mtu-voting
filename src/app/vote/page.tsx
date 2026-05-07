@@ -22,11 +22,10 @@ const BTN_STYLE = {
 
 // Glass card style — the main panels
 const GLASS = {
-  background: "rgba(255,255,255,0.05)",
+  background: "rgba(255,255,255,0.06)",
   backdropFilter: "blur(24px)",
   WebkitBackdropFilter: "blur(24px)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  boxShadow: "0 24px 80px rgba(0,0,0,0.45), 0 4px 24px rgba(0,0,0,0.3)",
+  border: "1px solid rgba(255,255,255,0.12)",
 } as React.CSSProperties;
 
 async function fetchCategories(): Promise<Category[]> {
@@ -82,11 +81,14 @@ function CategoryPanel({
   isLast: boolean;
 }) {
   const nominees = category.nominees;
-  // 1–2 nominees: 2 big cols. 3+: 3 cols on sm and up, 2 on mobile.
-  const gridClass = nominees.length <= 2
-    ? "grid grid-cols-2 gap-5"
-    : "grid grid-cols-2 sm:grid-cols-3 gap-4";
-  const wrapperClass = nominees.length <= 2 ? "max-w-md" : "w-full";
+  const gridClass =
+    nominees.length === 1 ? "grid grid-cols-1 gap-5" :
+    nominees.length === 2 ? "grid grid-cols-2 gap-5" :
+    "grid grid-cols-2 sm:grid-cols-3 gap-4";
+  const wrapperClass =
+    nominees.length === 1 ? "max-w-xs mx-auto" :
+    nominees.length === 2 ? "max-w-lg mx-auto" :
+    "w-full";
 
   return (
     <motion.div
@@ -95,47 +97,46 @@ function CategoryPanel({
       exit={{ opacity: 0, x: -30 }}
       transition={{ duration: 0.22 }}
     >
-      <div style={GLASS}>
-        {/* Header */}
-        <div className="px-7 py-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="font-mono text-[10px] font-medium tracking-widest uppercase mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>
-            Category {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-          </p>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold leading-tight" style={{ color: "white" }}>{category.name}</h1>
-              <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>Select one candidate to vote</p>
-            </div>
-            {selectedId && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5"
-                style={{
-                  background: "rgba(99,102,241,0.15)",
-                  border: "1px solid rgba(99,102,241,0.35)",
-                  color: "#a5b4fc",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                  <path d="M1.5 4.5l2 2 4-4" stroke="#a5b4fc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                SELECTED
-              </motion.div>
-            )}
+      {/* Header — floats directly on background */}
+      <div className="mb-8">
+        <p className="font-mono text-[10px] font-medium tracking-widest uppercase mb-3" style={{ color: "rgba(255,255,255,0.35)" }}>
+          Category {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold leading-tight" style={{ color: "white" }}>{category.name}</h1>
+            <p className="text-sm mt-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>Select one candidate to vote</p>
           </div>
+          {selectedId && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5"
+              style={{
+                background: "rgba(99,102,241,0.15)",
+                border: "1px solid rgba(99,102,241,0.35)",
+                color: "#a5b4fc",
+                fontSize: 11,
+                fontWeight: 600,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                <path d="M1.5 4.5l2 2 4-4" stroke="#a5b4fc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              SELECTED
+            </motion.div>
+          )}
         </div>
+      </div>
 
-        {/* Nominees */}
-        <div className="px-7 py-6">
-          {nominees.length === 0 ? (
-            <p className="text-sm text-center py-12" style={{ color: "rgba(255,255,255,0.3)" }}>No nominees in this category yet.</p>
-          ) : (
-            <div className={wrapperClass}>
-              <div className={gridClass}>
+      {/* Nominees — floats directly on background */}
+      <div>
+        {nominees.length === 0 ? (
+          <p className="text-sm text-center py-12" style={{ color: "rgba(255,255,255,0.3)" }}>No nominees in this category yet.</p>
+        ) : (
+          <div className={wrapperClass}>
+            <div className={gridClass}>
                 {nominees.map((nominee, i) => {
                   const isSelected = selectedId === nominee.id;
                   return (
@@ -145,66 +146,74 @@ function CategoryPanel({
                       initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.06, duration: 0.22 }}
-                      // No whileHover y-bounce — just a clean shadow lift via CSS
                       onClick={() => onSelect(nominee.id)}
-                      className="group text-left overflow-hidden focus:outline-none transition-all duration-200"
-                      style={
-                        isSelected
-                          ? { boxShadow: "0 0 0 2px #6366f1, 0 16px 48px rgba(99,102,241,0.25)", transform: "none" }
-                          : { boxShadow: "0 0 0 1px rgba(255,255,255,0.08)" }
-                      }
+                      className="group relative overflow-hidden focus:outline-none"
+                      style={{
+                        aspectRatio: "3/4",
+                        display: "block",
+                        outline: isSelected ? "2.5px solid #818cf8" : "1.5px solid rgba(255,255,255,0.08)",
+                        outlineOffset: isSelected ? "3px" : "0px",
+                        transition: "outline 0.15s ease, outline-offset 0.15s ease",
+                      }}
                     >
-                      {/* Photo */}
-                      <div className="relative aspect-[3/4] overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {/* Full-bleed photo */}
+                      <div className="absolute inset-0">
                         <Image
                           src={nominee.imageUrl}
                           alt={nominee.name}
                           fill
-                          className={`object-cover transition-transform duration-500 ${isSelected ? "scale-[1.04]" : "group-hover:scale-[1.03]"}`}
+                          className={`object-cover transition-transform duration-500 ${isSelected ? "scale-[1.06]" : "group-hover:scale-[1.04]"}`}
                           sizes="(max-width: 640px) 45vw, 220px"
                         />
-                        {isSelected && (
-                          <>
-                            <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className="absolute inset-0"
-                              style={{ background: "linear-gradient(to top, rgba(99,102,241,0.45) 0%, transparent 60%)" }}
-                            />
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.6 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ type: "spring", stiffness: 400, damping: 18 }}
-                              className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center"
-                              style={{ background: ACCENT_GRAD }}
-                            >
-                              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                                <path d="M2 6.5l3.5 3.5 5.5-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </motion.div>
-                          </>
-                        )}
                       </div>
 
-                      {/* Name */}
+                      {/* Bottom gradient — name always readable */}
                       <div
-                        className="px-3.5 py-3 transition-colors duration-200"
-                        style={{ background: isSelected ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.04)" }}
-                      >
+                        className="absolute inset-0"
+                        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 40%, transparent 70%)" }}
+                      />
+
+                      {/* Selected colour wash */}
+                      {isSelected && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="absolute inset-0"
+                          style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.22) 0%, transparent 60%)" }}
+                        />
+                      )}
+
+                      {/* Check badge */}
+                      {isSelected && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center z-10"
+                          style={{ background: ACCENT_GRAD }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                            <path d="M2 6.5l3.5 3.5 5.5-6" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </motion.div>
+                      )}
+
+                      {/* Name overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-4 pt-10 z-10">
                         <p
-                          className="text-xs font-semibold leading-snug line-clamp-2"
-                          style={{ color: isSelected ? "#c7d2fe" : "rgba(255,255,255,0.8)" }}
+                          className="font-mono text-xs font-bold leading-snug"
+                          style={{ color: isSelected ? "#c7d2fe" : "rgba(255,255,255,0.93)", textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
                         >
                           {nominee.name}
                         </p>
                         <AnimatePresence>
                           {isSelected && (
                             <motion.p
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="font-mono font-medium mt-0.5"
-                              style={{ fontSize: 10, color: "#818cf8" }}
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 4 }}
+                              className="font-mono font-semibold mt-0.5"
+                              style={{ fontSize: 9, color: "#a5b4fc", letterSpacing: "0.12em" }}
                             >
                               YOUR VOTE
                             </motion.p>
@@ -214,26 +223,26 @@ function CategoryPanel({
                     </motion.button>
                   );
                 })}
-              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
-        {/* Navigation */}
-        <div className="px-7 py-5 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      {/* Navigation */}
+      <div className="mt-8 flex items-center justify-between">
           <button
             onClick={onBack}
             disabled={!canGoBack}
-            className="text-sm transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-            style={{ color: "rgba(255,255,255,0.45)" }}
+            className="text-sm font-medium transition-all duration-150 disabled:opacity-20 disabled:cursor-not-allowed px-4 py-2"
+            style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.15)" }}
           >
             ← Back
           </button>
           <div className="flex items-center gap-3">
             <button
               onClick={onSkip}
-              className="text-sm transition-colors px-2 py-1.5"
-              style={{ color: "rgba(255,255,255,0.4)" }}
+              className="text-sm font-medium transition-all duration-150 px-4 py-2"
+              style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.15)" }}
             >
               Skip
             </button>
@@ -241,7 +250,6 @@ function CategoryPanel({
               {isLast ? "Review Votes" : "Next →"}
             </Button>
           </div>
-        </div>
       </div>
     </motion.div>
   );
@@ -326,8 +334,8 @@ function ReviewPanel({
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="text-sm transition-colors flex-shrink-0"
-              style={{ color: "rgba(255,255,255,0.4)" }}
+              className="text-sm font-medium transition-all duration-150 flex-shrink-0 px-4 py-2"
+              style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.15)" }}
             >
               ← Back
             </button>
@@ -595,7 +603,8 @@ export default function VotePage() {
       </AnimatePresence>
 
       {/* ── Main content ── */}
-      <main className="flex-1 h-full overflow-y-auto relative z-10 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8 flex items-start justify-center">
+      <main className="flex-1 h-full overflow-y-auto relative z-10 pt-16 lg:pt-0">
+        <div className="min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-8">
         {isLoading && (
           <div className="flex items-center justify-center w-full py-32">
             <div
@@ -646,6 +655,7 @@ export default function VotePage() {
             </AnimatePresence>
           </div>
         )}
+        </div>
       </main>
     </div>
   );

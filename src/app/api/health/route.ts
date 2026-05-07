@@ -20,8 +20,8 @@ export async function GET() {
 
   const smtpTransporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
   });
 

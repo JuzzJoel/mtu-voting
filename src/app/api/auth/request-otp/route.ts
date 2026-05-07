@@ -76,6 +76,11 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Invalidate any previous unused OTPs for this user
+    await prisma.otpCode.deleteMany({
+      where: { userId: user.id, usedAt: null },
+    })
+
     const otp = generateOtpCode()
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex')
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
@@ -91,9 +96,16 @@ export async function POST(req: NextRequest) {
     })
 
     // ── 5. Send email ─────────────────────────────────────────────────────
-    sendOtpEmail(email, otp).catch((err) =>
-      console.error('[request-otp] Email error:', err)
-    )
+    try {
+      await sendOtpEmail(email, otp)
+    } catch (err) {
+      console.error('[request-otp] Email error:', err instanceof Error ? err.message : String(err))
+      return NextResponse.json(
+        { error: 'We could not send the email. Please check your address and try again.' },
+        { status: 502, headers: corsHeaders(req) }
+      )
+    }
+
     return NextResponse.json({ ok: true }, { headers: corsHeaders(req) })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
