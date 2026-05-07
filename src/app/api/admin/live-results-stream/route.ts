@@ -8,25 +8,27 @@ export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req)
 
-    // Set up SSE response headers
     const headers = new Headers({
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no', // Disable Nginx buffering
+      'X-Accel-Buffering': 'no',
     })
 
-    // Create a readable stream for SSE
     const encoder = new TextEncoder()
     const customReadable = new ReadableStream({
       async start(controller) {
+        let closed = false
+
         const send = (data: unknown) => {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-          )
+          if (closed) return
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+          } catch {
+            closed = true
+          }
         }
 
-        // Send initial data
         const fetchData = async () => {
           const grouped = await prisma.vote.groupBy({
             by: ['categoryId', 'contestantId'],
@@ -44,12 +46,8 @@ export async function GET(req: NextRequest) {
             select: { id: true, title: true },
           })
 
-          const contestantMap = Object.fromEntries(
-            contestants.map((c) => [c.id, c])
-          )
-          const categoryMap = Object.fromEntries(
-            categories.map((c) => [c.id, c])
-          )
+          const contestantMap = Object.fromEntries(contestants.map((c) => [c.id, c]))
+          const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]))
 
           const totals = grouped.map((row) => ({
             categoryId: row.categoryId,
@@ -85,27 +83,26 @@ export async function GET(req: NextRequest) {
         }
 
         try {
-          const initialData = await fetchData()
-          send(initialData)
+          send(await fetchData())
 
-          // Check for updates every 500ms for near real-time experience
           const interval = setInterval(async () => {
+            if (closed) { clearInterval(interval); return }
             try {
-              const data = await fetchData()
-              send(data)
+              send(await fetchData())
             } catch (err) {
               console.error('Error fetching data in SSE:', err)
             }
-          }, 500)
+          }, 3000)
 
-          // Clean up on connection close
           req.signal.addEventListener('abort', () => {
+            closed = true
             clearInterval(interval)
-            controller.close()
+            try { controller.close() } catch {}
           })
         } catch (err) {
           console.error('SSE Error:', err)
-          controller.close()
+          closed = true
+          try { controller.close() } catch {}
         }
       },
     })
@@ -113,10 +110,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse(customReadable, { headers })
   } catch (error) {
     if (error instanceof Error && error.message === 'Forbidden') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

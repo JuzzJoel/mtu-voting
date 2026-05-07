@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -424,6 +424,12 @@ export default function VotePage() {
     setCurrentIndex((i) => Math.max(i - 1, 0));
   };
 
+  const handleLogout = useCallback(async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    clearAll();
+    router.replace("/auth");
+  }, [clearAll, router]);
+
   // Sidebar category list — shared between desktop and mobile drawer
   const CategoryList = ({ onSelect }: { onSelect: (i: number) => void }) => (
     <>
@@ -538,6 +544,13 @@ export default function VotePage() {
           >
             REVIEW & SUBMIT
           </button>
+          <button
+            onClick={handleLogout}
+            className="w-full mt-2 py-2 text-xs font-mono tracking-wide transition-opacity duration-150 hover:opacity-80"
+            style={{ color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            END SESSION
+          </button>
         </div>
       </aside>
 
@@ -559,6 +572,17 @@ export default function VotePage() {
           style={{ color: "rgba(255,255,255,0.65)", border: "1px solid rgba(255,255,255,0.15)" }}
         >
           CATEGORIES
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-80"
+          style={{ color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.12)" }}
+          title="End session"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M5 2H2.5A1.5 1.5 0 001 3.5v7A1.5 1.5 0 002.5 12H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            <path d="M9 4l3 3-3 3M12 7H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
       </div>
 
