@@ -165,9 +165,9 @@ function CategoryPanel({
         <p className="font-mono text-[10px] font-medium tracking-widest uppercase mb-3" style={{ color: "rgba(255,255,255,0.35)" }}>
           Category {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </p>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold leading-tight" style={{ color: "white" }}>{category.name}</h1>
+        <div className="flex items-start justify-between gap-3 pt-7 lg:pt-3">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold leading-tight" style={{ color: "white" }}>{category.name}</h1>
             <p className="text-sm mt-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>Select one candidate to vote</p>
           </div>
           {selectedId && (
