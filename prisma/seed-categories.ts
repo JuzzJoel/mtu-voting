@@ -11,6 +11,10 @@ const OBSOLETE_TITLES = [
   "Sportsman & Sportswoman of the Year",
   "Most Sociable (M/F)",
   "Producer of the Year",
+  "Portalen of the Year (Male)",
+  "Portalen of the Year (Female)",
+  "Rookie of the Year (100 Level)",
+  "Best Dressed (Male & Female) (100 Level)",
 ];
 
 const categories = [
@@ -31,8 +35,6 @@ const categories = [
   { title: "Best Lecturer (CBAS/CHMS/CAHS)", order: 13 },
   { title: "Vocalist of the Year", order: 14 },
   { title: "Tech Savvy", order: 15 },
-  { title: "Portalen of the Year (Male)", order: 16 },
-  { title: "Portalen of the Year (Female)", order: 17 },
   { title: "Entrepreneur of the Year", order: 18 },
   { title: "Hairstylist of the Year", order: 19 },
   { title: "Fashion Designer of the Year", order: 20 },
@@ -42,7 +44,8 @@ const categories = [
   { title: "Most Sociable (Male)", order: 24 },
   { title: "Most Sociable (Female)", order: 25 },
   { title: "Videographer of the Year", order: 26 },
-  { title: "SRC of the Year", order: 27 },
+  { title: "SRC of the Year", order: 28 },
+  { title: "Best Instrumentalist", order: 27 },
   // removed: Producer of the Year (order: 8) — re-numbering not needed; DB handles gaps
 ];
 

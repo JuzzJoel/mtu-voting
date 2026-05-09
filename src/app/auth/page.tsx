@@ -331,11 +331,25 @@ export default function AuthPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-center text-xs text-white/30 mt-6"
+          className="text-center text-xs mt-6"
+          style={{ color: "rgba(255,255,255,0.3)" }}
         >
           Only @mtu.edu.ng email addresses are permitted.
         </motion.p>
+
       </motion.div>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.65 }}
+        className="fixed bottom-4 right-5 text-xs"
+        style={{ color: "rgba(255,255,255,0.18)" }}
+      >
+        code by{" "}
+        <a href="https://github.com/big-tinsu" target="_blank" rel="noopener noreferrer" className="hover:text-white/50 transition-colors underline underline-offset-2">Tinsu</a>
+        {" & "}
+        <a href="https://github.com/JuzzJoel/" target="_blank" rel="noopener noreferrer" className="hover:text-white/50 transition-colors underline underline-offset-2">Armani</a>
+      </motion.p>
     </div>
   );
 }
