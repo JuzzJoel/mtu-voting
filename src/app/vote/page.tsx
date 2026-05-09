@@ -9,7 +9,7 @@ import { Button } from "@/components/ui";
 import { useVotingStore } from "@/stores/voting-store";
 
 // Voting closes 50 hours after 2026-05-09 09:00 WAT (UTC+1)
-const VOTING_DEADLINE = new Date("2026-05-11T08:00:00Z");
+const VOTING_DEADLINE = new Date("2026-05-11T16:00:00Z");
 
 function useCountdown(deadline: Date) {
   const [remaining, setRemaining] = useState(() => Math.max(0, deadline.getTime() - Date.now()));
