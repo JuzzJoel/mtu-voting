@@ -129,19 +129,13 @@ function StatusDot({ status }: { status: "voted" | "skipped" | "active" | "unvis
 
 // ── Category voting panel ─────────────────────────────────────────────────────
 function CategoryPanel({
-  category, index, total, selectedId,
-  onSelect, onNext, onSkip, onBack, canGoBack, isLast,
+  category, index, total, selectedId, onSelect,
 }: {
   category: Category;
   index: number;
   total: number;
   selectedId: string | undefined;
   onSelect: (id: string) => void;
-  onNext: () => void;
-  onSkip: () => void;
-  onBack: () => void;
-  canGoBack: boolean;
-  isLast: boolean;
 }) {
   const nominees = category.nominees;
   const gridClass =
@@ -291,29 +285,6 @@ function CategoryPanel({
         )}
       </div>
 
-      {/* Navigation */}
-      <div className="mt-8 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            disabled={!canGoBack}
-            className="text-sm font-medium transition-all duration-150 disabled:opacity-20 disabled:cursor-not-allowed px-4 py-2"
-            style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.15)" }}
-          >
-            ← Back
-          </button>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onSkip}
-              className="text-sm font-medium transition-all duration-150 px-4 py-2"
-              style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.15)" }}
-            >
-              Skip
-            </button>
-            <Button onClick={onNext} disabled={!selectedId} style={BTN_STYLE}>
-              {isLast ? "Review Votes" : "Next →"}
-            </Button>
-          </div>
-      </div>
     </motion.div>
   );
 }
@@ -742,7 +713,7 @@ export default function VotePage() {
       </AnimatePresence>
 
       {/* ── Main content ── */}
-      <main className="flex-1 h-full overflow-y-auto relative z-10 pt-16 lg:pt-0">
+      <main className="flex-1 h-full overflow-y-auto relative z-10 pt-16 lg:pt-0 pb-20">
         <div className="min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-8">
         {(isLoading || voteStatusLoading) && (
           <div className="flex items-center justify-center w-full py-32">
@@ -753,18 +724,19 @@ export default function VotePage() {
           </div>
         )}
 
-        {!isLoading && !voteStatusLoading && isError && (
+        {/* Already voted — highest priority, shown regardless of category load state */}
+        {!voteStatusLoading && voteStatus?.hasVoted && (
+          <AlreadyVotedScreen onLogout={handleLogout} />
+        )}
+
+        {!isLoading && !voteStatusLoading && !voteStatus?.hasVoted && isError && (
           <div className="w-full max-w-lg mt-8 p-8 text-center" style={GLASS}>
             <p className="text-sm font-semibold text-white mb-1">Unable to load categories</p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Please refresh and try again.</p>
           </div>
         )}
 
-        {!isLoading && !voteStatusLoading && !isError && voteStatus?.hasVoted && (
-          <AlreadyVotedScreen onLogout={handleLogout} />
-        )}
-
-        {!isLoading && !voteStatusLoading && !isError && !voteStatus?.hasVoted && categories.length > 0 && (
+        {!isLoading && !voteStatusLoading && !voteStatus?.hasVoted && !isError && categories.length > 0 && (
           <div className="w-full max-w-3xl pb-8">
             <AnimatePresence mode="wait">
               {reviewMode ? (
@@ -788,11 +760,6 @@ export default function VotePage() {
                   total={total}
                   selectedId={currentVote}
                   onSelect={(id) => setVote(currentCategory.id, id)}
-                  onNext={handleNext}
-                  onSkip={handleSkip}
-                  onBack={handleBack}
-                  canGoBack={currentIndex > 0}
-                  isLast={currentIndex + 1 >= total}
                 />
               ) : null}
             </AnimatePresence>
@@ -800,6 +767,40 @@ export default function VotePage() {
         )}
         </div>
       </main>
+
+      {/* ── Fixed bottom navigation (category mode only) ── */}
+      {!reviewMode && currentCategory && !voteStatus?.hasVoted && (
+        <div
+          className="fixed bottom-0 left-0 right-0 lg:left-[260px] z-20 flex items-center justify-between px-4 sm:px-6 py-3"
+          style={{
+            background: "rgba(0,0,0,0.3)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <button
+            onClick={handleBack}
+            disabled={currentIndex === 0}
+            className="text-sm font-medium transition-all duration-150 disabled:opacity-20 disabled:cursor-not-allowed px-4 py-2"
+            style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.15)" }}
+          >
+            ← Back
+          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSkip}
+              className="text-sm font-medium transition-all duration-150 px-4 py-2"
+              style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.15)" }}
+            >
+              Skip
+            </button>
+            <Button onClick={handleNext} disabled={!currentVote} style={BTN_STYLE}>
+              {currentIndex + 1 >= total ? "Review Votes" : "Next →"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

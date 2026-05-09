@@ -12,21 +12,25 @@ export async function createVotesInTransaction(
   userId: string,
   votes: { categoryId: string; nomineeId: string }[]
 ) {
-  return prisma.$transaction(async (tx) => {
-    for (const vote of votes) {
-      const nominee = await tx.contestant.findFirst({
-        where: { id: vote.nomineeId, categoryId: vote.categoryId },
-        select: { id: true },
-      })
-      if (!nominee) throw new Error('INVALID_NOMINEE')
+  // Validate all nominees in a single query — avoids interactive transaction
+  // which is incompatible with Neon's connection pooler
+  const validNominees = await prisma.contestant.findMany({
+    where: {
+      OR: votes.map((v) => ({ id: v.nomineeId, categoryId: v.categoryId })),
+    },
+    select: { id: true },
+  })
 
-      await tx.vote.create({
-        data: {
-          userId,
-          categoryId: vote.categoryId,
-          contestantId: vote.nomineeId,
-        },
-      })
-    }
+  if (validNominees.length !== votes.length) {
+    throw new Error('INVALID_NOMINEE')
+  }
+
+  // createMany issues a single INSERT — atomic at the DB level
+  await prisma.vote.createMany({
+    data: votes.map((v) => ({
+      userId,
+      categoryId: v.categoryId,
+      contestantId: v.nomineeId,
+    })),
   })
 }
