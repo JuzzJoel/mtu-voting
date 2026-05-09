@@ -17,6 +17,11 @@ const OBSOLETE_TITLES = [
   "Best Dressed (Male & Female) (100 Level)",
 ];
 
+// Rename existing categories without losing their nominees
+const RENAMES: { from: string; to: string }[] = [
+  { from: "Hairstylist of the Year", to: "Hairstylist of the Year (Female)" },
+];
+
 const categories = [
   // 100 Level
   { title: "Rookie of the Year", order: 1 },
@@ -36,7 +41,8 @@ const categories = [
   { title: "Vocalist of the Year", order: 14 },
   { title: "Tech Savvy", order: 15 },
   { title: "Entrepreneur of the Year", order: 18 },
-  { title: "Hairstylist of the Year", order: 19 },
+  { title: "Hairstylist of the Year (Female)", order: 19 },
+  { title: "Hairstylist of the Year (Male)", order: 27 },
   { title: "Fashion Designer of the Year", order: 20 },
   { title: "Sportsman of the Year", order: 21 },
   { title: "Sportswoman of the Year", order: 22 },
@@ -44,12 +50,17 @@ const categories = [
   { title: "Most Sociable (Male)", order: 24 },
   { title: "Most Sociable (Female)", order: 25 },
   { title: "Videographer of the Year", order: 26 },
-  { title: "SRC of the Year", order: 28 },
-  { title: "Best Instrumentalist", order: 27 },
+  { title: "SRC of the Year", order: 29 },
+  { title: "Best Instrumentalist", order: 28 },
   // removed: Producer of the Year (order: 8) — re-numbering not needed; DB handles gaps
 ];
 
 async function main() {
+  // Rename categories without losing their nominees
+  for (const { from, to } of RENAMES) {
+    await prisma.category.updateMany({ where: { title: from }, data: { title: to } });
+  }
+
   // Remove old combined M/F categories (cascades to contestants/votes)
   const deleted = await prisma.category.deleteMany({
     where: { title: { in: OBSOLETE_TITLES } },
