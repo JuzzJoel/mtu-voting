@@ -74,6 +74,7 @@ function CountdownTimer({ compact = false }: { compact?: boolean }) {
 type Nominee = { id: string; name: string; imageUrl: string; description: string | null };
 type Category = { id: string; name: string; order: number; nominees: Nominee[] };
 type VotePayload = { categoryId: string; contestantId: string };
+type MyVote = { categoryName: string; nominee: { name: string; imageUrl: string } };
 
 const PAGE_BG = "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)";
 const ACCENT_GRAD = "linear-gradient(135deg, #6366f1, #8b5cf6)";
@@ -383,34 +384,70 @@ function ReviewPanel({
   );
 }
 
-// ── Already voted locked screen ──────────────────────────────────────────────
-function AlreadyVotedScreen({ onLogout }: { onLogout: () => void }) {
+// ── Already voted — read-only vote summary ────────────────────────────────────
+function AlreadyVotedScreen({ onLogout, votes, votesLoading }: { onLogout: () => void; votes: MyVote[]; votesLoading: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="flex flex-col items-center text-center px-6 max-w-sm mx-auto py-16"
+      className="w-full max-w-lg mx-auto px-4"
     >
-      <div
-        className="w-16 h-16 flex items-center justify-center mb-6 flex-shrink-0"
-        style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
-      >
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <path d="M6 14l6 6 10-12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+      {/* Header */}
+      <div className="flex flex-col items-center text-center mb-6">
+        <div
+          className="w-12 h-12 flex items-center justify-center mb-4 flex-shrink-0"
+          style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+        >
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M4 11l5 5 9-10" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h2 className="text-lg font-bold text-white">Your Votes</h2>
+        <p className="text-xs mt-1 font-mono" style={{ color: "rgba(255,255,255,0.3)" }}>
+          VIEW ONLY · MTU STUDENT CHOICE AWARDS 2026
+        </p>
       </div>
-      <h2 className="text-xl font-bold text-white mb-2">You&apos;ve already voted</h2>
-      <p className="text-sm mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
-        Your votes for the MTU Student Choice Awards 2026 have been recorded.
-      </p>
-      <p className="text-sm mb-10" style={{ color: "rgba(255,255,255,0.22)" }}>
-        Each student can only vote once. Results will be announced soon.
-      </p>
+
+      {/* Vote list */}
+      <div style={GLASS} className="overflow-hidden mb-4">
+        {votesLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-6 h-6 border-2 rounded-full animate-spin"
+              style={{ borderColor: "rgba(255,255,255,0.12)", borderTopColor: "rgba(255,255,255,0.6)" }} />
+          </div>
+        ) : votes.length === 0 ? (
+          <p className="text-center text-xs py-10" style={{ color: "rgba(255,255,255,0.3)" }}>No votes found.</p>
+        ) : (
+          <div className="divide-y overflow-y-auto" style={{ maxHeight: "55vh", borderColor: "rgba(255,255,255,0.06)" }}>
+            {votes.map((v, i) => (
+              <div key={i} className="flex items-center gap-3 px-5 py-3">
+                <div className="w-9 h-9 flex-shrink-0 overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <Image src={v.nominee.imageUrl} alt={v.nominee.name} width={36} height={36} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-mono truncate" style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em" }}>
+                    {v.categoryName.toUpperCase()}
+                  </p>
+                  <p className="text-sm font-semibold truncate mt-0.5 uppercase" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    {v.nominee.name}
+                  </p>
+                </div>
+                <div style={{ background: ACCENT_GRAD }} className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                  <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                    <path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <button
         onClick={onLogout}
-        className="px-6 py-2.5 text-xs font-mono tracking-widest text-white transition-opacity hover:opacity-75"
-        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}
+        className="w-full py-2.5 text-xs font-mono tracking-widest text-white transition-opacity hover:opacity-75"
+        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
       >
         END SESSION
       </button>
@@ -438,6 +475,17 @@ export default function VotePage() {
       if (!res.ok) return { hasVoted: false, voteCount: 0 };
       return res.json() as Promise<{ hasVoted: boolean; voteCount: number }>;
     },
+    staleTime: Infinity,
+  });
+
+  const { data: myVotes = [], isLoading: myVotesLoading } = useQuery({
+    queryKey: ["my-votes"],
+    queryFn: async () => {
+      const res = await fetch("/api/vote/my-votes");
+      if (!res.ok) return [] as MyVote[];
+      return res.json() as Promise<MyVote[]>;
+    },
+    enabled: !!voteStatus?.hasVoted,
     staleTime: Infinity,
   });
 
@@ -726,7 +774,7 @@ export default function VotePage() {
 
         {/* Already voted — highest priority, shown regardless of category load state */}
         {!voteStatusLoading && voteStatus?.hasVoted && (
-          <AlreadyVotedScreen onLogout={handleLogout} />
+          <AlreadyVotedScreen onLogout={handleLogout} votes={myVotes} votesLoading={myVotesLoading} />
         )}
 
         {!isLoading && !voteStatusLoading && !voteStatus?.hasVoted && isError && (

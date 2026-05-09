@@ -80,9 +80,8 @@ function SuccessContent() {
   const router = useRouter();
   const votes = Number(searchParams.get("votes") ?? 0);
 
-  const handleDone = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/auth");
+  const handleDone = () => {
+    router.replace("/vote");
   };
 
   return (
