@@ -23,6 +23,7 @@ export async function getActiveCategories(excludedCategoryIds: string[]) {
     include: {
       contestants: {
         select: { id: true, name: true, imageUrl: true, description: true },
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
       },
     },
     orderBy: { order: 'asc' },

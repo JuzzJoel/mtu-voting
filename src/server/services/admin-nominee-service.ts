@@ -12,8 +12,9 @@ export function getAdminNominees() {
 export function createAdminNominee(input: {
   name: string
   categoryId: string
-  imageUrl: string
+  imageUrl?: string | null
   description?: string | null
+  position?: number | null
 }) {
   return createNominee(input)
 }
@@ -25,6 +26,7 @@ export function updateAdminNominee(
     categoryId?: string
     imageUrl?: string
     description?: string | null
+    position?: number | null
   }
 ) {
   return updateNominee(id, input)

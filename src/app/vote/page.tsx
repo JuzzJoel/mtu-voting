@@ -1,12 +1,75 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui";
 import { useVotingStore } from "@/stores/voting-store";
+
+// Voting closes 50 hours after 2026-05-09 09:00 WAT (UTC+1)
+const VOTING_DEADLINE = new Date("2026-05-11T08:00:00Z");
+
+function useCountdown(deadline: Date) {
+  const [remaining, setRemaining] = useState(() => Math.max(0, deadline.getTime() - Date.now()));
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRemaining(Math.max(0, deadline.getTime() - Date.now()));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [deadline]);
+
+  const totalSeconds = Math.floor(remaining / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const expired = remaining === 0;
+
+  return { hours, minutes, seconds, expired };
+}
+
+function CountdownTimer({ compact = false }: { compact?: boolean }) {
+  const { hours, minutes, seconds, expired } = useCountdown(VOTING_DEADLINE);
+
+  if (expired) {
+    return (
+      <p className="font-mono text-xs font-semibold" style={{ color: "#f87171" }}>
+        VOTING CLOSED
+      </p>
+    );
+  }
+
+  if (compact) {
+    return (
+      <p className="font-mono" style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
+        {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")} LEFT
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      <p className="font-mono text-[10px] mb-1.5" style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em" }}>
+        VOTING ENDS IN
+      </p>
+      <div className="flex items-center gap-1.5">
+        {[{ v: hours, l: "HRS" }, { v: minutes, l: "MIN" }, { v: seconds, l: "SEC" }].map(({ v, l }) => (
+          <div key={l} className="flex flex-col items-center">
+            <div
+              className="font-mono font-bold text-sm leading-none px-2 py-1.5 min-w-[36px] text-center"
+              style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              {String(v).padStart(2, "0")}
+            </div>
+            <span className="font-mono mt-0.5" style={{ fontSize: 8, color: "rgba(255,255,255,0.25)", letterSpacing: "0.06em" }}>{l}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type Nominee = { id: string; name: string; imageUrl: string; description: string | null };
 type Category = { id: string; name: string; order: number; nominees: Nominee[] };
@@ -202,7 +265,7 @@ function CategoryPanel({
                       <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-4 pt-10 z-10">
                         <p
                           className="font-mono text-xs font-bold leading-snug"
-                          style={{ color: isSelected ? "#c7d2fe" : "rgba(255,255,255,0.93)", textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+                          style={{ color: isSelected ? "#c7d2fe" : "rgba(255,255,255,0.93)", textShadow: "0 1px 6px rgba(0,0,0,0.9)", textTransform: "uppercase" }}
                         >
                           {nominee.name}
                         </p>
@@ -517,6 +580,9 @@ export default function VotePage() {
 
         {/* Progress + submit */}
         <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="mb-4">
+            <CountdownTimer />
+          </div>
           <div className="flex items-center justify-between mb-2">
             <p className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
               {votedCount}/{total} voted
@@ -562,9 +628,13 @@ export default function VotePage() {
         <Image src="/general/src-logo.png" alt="MTU" width={22} height={22} className="object-contain flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-white truncate">Student Choice Awards</p>
-          <p className="font-mono mt-0.5" style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
-            {reviewMode ? "REVIEW" : `${String(currentIndex + 1).padStart(2,"0")}/${String(total).padStart(2,"0")}`} · {votedCount} VOTED
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="font-mono" style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
+              {reviewMode ? "REVIEW" : `${String(currentIndex + 1).padStart(2,"0")}/${String(total).padStart(2,"0")}`} · {votedCount} VOTED
+            </p>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>·</span>
+            <CountdownTimer compact />
+          </div>
         </div>
         <button
           onClick={() => setShowDrawer(true)}

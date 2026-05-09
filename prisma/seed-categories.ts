@@ -10,6 +10,7 @@ const OBSOLETE_TITLES = [
   "Portalen of the Year (M/F)",
   "Sportsman & Sportswoman of the Year",
   "Most Sociable (M/F)",
+  "Producer of the Year",
 ];
 
 const categories = [
@@ -23,11 +24,10 @@ const categories = [
   { title: "Most Fashionable (Female)", order: 5 },
   { title: "Most Influential (Male)", order: 6 },
   { title: "Most Influential (Female)", order: 7 },
-  { title: "Producer of the Year", order: 8 },
-  { title: "Artfully Creative", order: 9 },
-  { title: "Photographer of the Year", order: 10 },
-  { title: "Best Cafeteria Stand", order: 11 },
-  { title: "Best Course Rep", order: 12 },
+  { title: "Artfully Creative", order: 8 },
+  { title: "Photographer of the Year", order: 9 },
+  { title: "Best Cafeteria Stand", order: 10 },
+  { title: "Best Course Rep", order: 11 },
   { title: "Best Lecturer (CBAS/CHMS/CAHS)", order: 13 },
   { title: "Vocalist of the Year", order: 14 },
   { title: "Tech Savvy", order: 15 },
@@ -42,6 +42,8 @@ const categories = [
   { title: "Most Sociable (Male)", order: 24 },
   { title: "Most Sociable (Female)", order: 25 },
   { title: "Videographer of the Year", order: 26 },
+  { title: "SRC of the Year", order: 27 },
+  // removed: Producer of the Year (order: 8) — re-numbering not needed; DB handles gaps
 ];
 
 async function main() {

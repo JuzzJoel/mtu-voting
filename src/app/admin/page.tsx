@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui";
 
 type Category = { id: string; title: string; order: number; isActive: boolean };
-type Nominee = { id: string; name: string; imageUrl: string; description?: string | null; category: { id: string; title: string } };
+type Nominee = { id: string; name: string; imageUrl: string; description?: string | null; position?: number | null; category: { id: string; title: string } };
 type Toast = { message: string; type: "success" | "error" } | null;
 
 async function fetchJson<T>(url: string) {
@@ -29,6 +29,7 @@ export default function AdminPage() {
   const [nomName, setNomName] = useState("");
   const [nomCatId, setNomCatId] = useState("");
   const [nomDesc, setNomDesc] = useState("");
+  const [nomPosition, setNomPosition] = useState<string>("");
   const [nomFile, setNomFile] = useState<File | null>(null);
   const [nomPreview, setNomPreview] = useState<string | null>(null);
   const [editNomId, setEditNomId] = useState<string | null>(null);
@@ -52,7 +53,7 @@ export default function AdminPage() {
   };
 
   const resetCatForm = () => { setCatTitle(""); setCatOrder(0); setCatActive(true); setEditCatId(null); };
-  const resetNomForm = () => { setNomName(""); setNomCatId(""); setNomDesc(""); setNomFile(null); setNomPreview(null); setEditNomId(null); };
+  const resetNomForm = () => { setNomName(""); setNomCatId(""); setNomDesc(""); setNomPosition(""); setNomFile(null); setNomPreview(null); setEditNomId(null); };
 
   const uploadImage = async (file: File): Promise<string> => {
     setUploading(true);
@@ -86,12 +87,16 @@ export default function AdminPage() {
     onError: () => showToast("Failed to delete category.", "error"),
   });
 
+  type NomPayload = { name: string; categoryId: string; description: string | null; position: number | null; file: File | null; preview: string | null };
+
   const createNom = useMutation({
-    mutationFn: async () => {
-      const imageUrl = nomFile ? await uploadImage(nomFile) : nomPreview;
-      if (!imageUrl) throw new Error("No image");
-      const res = await fetch("/api/admin/nominees", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nomName.trim(), categoryId: nomCatId, imageUrl, description: nomDesc.trim() || null }) });
-      if (!res.ok) throw new Error();
+    mutationFn: async (payload: NomPayload) => {
+      const imageUrl = payload.file ? await uploadImage(payload.file) : (payload.preview ?? null);
+      const res = await fetch("/api/admin/nominees", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: payload.name, categoryId: payload.categoryId, imageUrl, description: payload.description, position: payload.position }) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error ?? "Failed to add nominee.");
+      }
       return res.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-nominees"] }); resetNomForm(); showToast("Nominee added.", "success"); },
@@ -99,10 +104,10 @@ export default function AdminPage() {
   });
 
   const updateNom = useMutation({
-    mutationFn: async (id: string) => {
-      const imageUrl = nomFile ? await uploadImage(nomFile) : nomPreview;
+    mutationFn: async (payload: NomPayload & { id: string }) => {
+      const imageUrl = payload.file ? await uploadImage(payload.file) : payload.preview;
       if (!imageUrl) throw new Error("No image");
-      const res = await fetch(`/api/admin/nominees/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nomName.trim(), categoryId: nomCatId, imageUrl, description: nomDesc.trim() || null }) });
+      const res = await fetch(`/api/admin/nominees/${payload.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: payload.name, categoryId: payload.categoryId, imageUrl, description: payload.description, position: payload.position }) });
       if (!res.ok) throw new Error();
       return res.json();
     },
@@ -116,7 +121,7 @@ export default function AdminPage() {
     onError: () => showToast("Failed to delete nominee.", "error"),
   });
 
-  const nomFormValid = useMemo(() => nomName.trim().length > 1 && nomCatId && (nomFile || nomPreview), [nomName, nomCatId, nomFile, nomPreview]);
+  const nomFormValid = useMemo(() => nomName.trim().length > 1 && nomCatId, [nomName, nomCatId]);
   const isBusy = uploading || createNom.isPending || updateNom.isPending;
 
   const field = "w-full border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-gray-400 focus:bg-white transition-all";
@@ -223,7 +228,18 @@ export default function AdminPage() {
                 <textarea className={field} rows={2} value={nomDesc} onChange={e => setNomDesc(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Photo</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Card Position <span className="text-gray-400">(optional — lower number appears first)</span></label>
+                <input
+                  className={field}
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 1"
+                  value={nomPosition}
+                  onChange={e => setNomPosition(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Photo <span className="text-gray-400">(optional)</span></label>
                 <input type="file" accept="image/*" className="text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:border file:border-gray-200 file:text-xs file:font-medium file:text-gray-700 file:bg-gray-50 hover:file:bg-gray-100 file:cursor-pointer"
                   onChange={e => { const f = e.target.files?.[0] ?? null; setNomFile(f); setNomPreview(f ? URL.createObjectURL(f) : null); }} />
               </div>
@@ -235,11 +251,26 @@ export default function AdminPage() {
                   <button className="absolute top-1 left-1 bg-white border border-gray-200 text-xs text-red-500 px-1.5 py-0.5 hover:text-red-700 transition-colors" onClick={() => { setNomFile(null); setNomPreview(null); }}>✕</button>
                 </div>
               )}
-              {createNom.isError || updateNom.isError ? (
-                <p className="text-xs text-red-600 bg-red-50 border border-red-100 px-3 py-2">Failed to save nominee. Please try again.</p>
+              {(createNom.isError || updateNom.isError) ? (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-100 px-3 py-2">
+                  {(createNom.error instanceof Error ? createNom.error.message : null) ??
+                   (updateNom.error instanceof Error ? updateNom.error.message : null) ??
+                   "Failed to save nominee. Please try again."}
+                </p>
               ) : null}
               <div className="flex gap-2 pt-1">
-                <Button size="md" className="flex-1" disabled={!nomFormValid || isBusy} isLoading={isBusy} onClick={() => editNomId ? updateNom.mutate(editNomId) : createNom.mutate()}>
+                <Button size="md" className="flex-1" disabled={!nomFormValid || isBusy} isLoading={isBusy} onClick={() => {
+                  const payload = {
+                    name: nomName.trim(),
+                    categoryId: nomCatId,
+                    description: nomDesc.trim() || null,
+                    position: nomPosition !== "" ? parseInt(nomPosition, 10) : null,
+                    file: nomFile,
+                    preview: nomPreview,
+                  };
+                  if (editNomId) updateNom.mutate({ ...payload, id: editNomId });
+                  else createNom.mutate(payload);
+                }}>
                   {editNomId ? "Save Changes" : "Add Nominee"}
                 </Button>
                 {editNomId && <Button variant="secondary" size="md" onClick={resetNomForm}>Cancel</Button>}
@@ -266,11 +297,11 @@ export default function AdminPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{nom.name}</p>
-                      <p className="text-xs text-gray-400 truncate">{nom.category.title}</p>
+                      <p className="text-xs text-gray-400 truncate">{nom.category.title}{nom.position != null ? ` · #${nom.position}` : ""}</p>
                     </div>
                     <div className="flex gap-1.5 flex-shrink-0">
                       <button className="text-xs text-gray-500 hover:text-black px-2 py-1 border border-gray-200 hover:border-gray-400 transition-colors"
-                        onClick={() => { setEditNomId(nom.id); setNomName(nom.name); setNomCatId(nom.category.id); setNomDesc(nom.description ?? ""); setNomPreview(nom.imageUrl); setNomFile(null); }}>Edit</button>
+                        onClick={() => { setEditNomId(nom.id); setNomName(nom.name); setNomCatId(nom.category.id); setNomDesc(nom.description ?? ""); setNomPosition(nom.position != null ? String(nom.position) : ""); setNomPreview(nom.imageUrl); setNomFile(null); }}>Edit</button>
                       <button className="text-xs text-red-400 hover:text-red-600 px-2 py-1 border border-red-100 hover:border-red-300 transition-colors" onClick={() => deleteNom.mutate(nom.id)} disabled={deleteNom.isPending}>Delete</button>
                     </div>
                   </div>

@@ -7,18 +7,22 @@ export async function listNominees() {
   })
 }
 
+const DEFAULT_IMAGE = '/images/no-face.jpg'
+
 export async function createNominee(input: {
   name: string
   categoryId: string
-  imageUrl: string
+  imageUrl?: string | null
   description?: string | null
+  position?: number | null
 }) {
   return prisma.contestant.create({
     data: {
       name: input.name,
       categoryId: input.categoryId,
-      imageUrl: input.imageUrl,
+      imageUrl: input.imageUrl || DEFAULT_IMAGE,
       description: input.description ?? null,
+      position: input.position ?? null,
     },
   })
 }
@@ -30,11 +34,16 @@ export async function updateNominee(
     categoryId?: string
     imageUrl?: string
     description?: string | null
+    position?: number | null
   }
 ) {
+  const { categoryId, ...rest } = input
   return prisma.contestant.update({
     where: { id },
-    data: input,
+    data: {
+      ...rest,
+      ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+    },
   })
 }
 

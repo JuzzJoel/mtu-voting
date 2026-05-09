@@ -15,8 +15,9 @@ export const categoryUpdateSchema = z.object({
 export const nomineeCreateSchema = z.object({
   name: z.string().trim().min(2),
   categoryId: z.string().min(1),
-  imageUrl: z.string().url(),
+  imageUrl: z.string().url().optional().nullable(),
   description: z.string().trim().max(240).optional().nullable(),
+  position: z.number().int().min(1).optional().nullable(),
 })
 
 export const nomineeUpdateSchema = z.object({
@@ -24,6 +25,7 @@ export const nomineeUpdateSchema = z.object({
   categoryId: z.string().min(1).optional(),
   imageUrl: z.string().url().optional(),
   description: z.string().trim().max(240).optional().nullable(),
+  position: z.number().int().min(1).optional().nullable(),
 })
 
 export const uploadRequestSchema = z.object({

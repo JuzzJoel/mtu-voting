@@ -59,11 +59,12 @@ model Contestant {
   sanityId   String?   @unique
   categoryId String
   category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  name       String
-  imageUrl   String
+  name        String
+  imageUrl    String
   description String?
-  createdAt  DateTime  @default(now())
-  votes      Vote[]
+  position    Int?
+  createdAt   DateTime  @default(now())
+  votes       Vote[]
 
   @@index([categoryId])
   @@unique([categoryId, name])
