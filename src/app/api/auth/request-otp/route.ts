@@ -38,11 +38,25 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Strip plus-addressing (e.g. user+tag@mtu.edu.ng → user@mtu.edu.ng)
+  const [localPart, domain] = email.split('@')
+  email = `${localPart.split('+')[0]}@${domain}`
+
   const isAdmin = isAdminEmail(email)
   if (!mtuEmailRegex.test(email) && !isAdmin) {
     return NextResponse.json(
       { error: 'Only mtu.edu.ng email addresses are allowed.' },
       { status: 400, headers: corsHeaders(req) }
+    )
+  }
+
+  // Blocklist check — set BLOCKED_EMAILS in env as comma-separated list
+  const blocked = (process.env.BLOCKED_EMAILS ?? '')
+    .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+  if (blocked.includes(email)) {
+    return NextResponse.json(
+      { error: 'This email address is not permitted to vote.' },
+      { status: 403, headers: corsHeaders(req) }
     )
   }
 

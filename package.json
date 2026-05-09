@@ -11,7 +11,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
     "db:clear-votes": "tsx prisma/clear-votes.ts",
-    "db:factory-reset": "tsx prisma/factory-reset.ts"
+    "db:factory-reset": "tsx prisma/factory-reset.ts",
+    "db:cancel-vote": "tsx prisma/cancel-user-vote.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.892.0",
