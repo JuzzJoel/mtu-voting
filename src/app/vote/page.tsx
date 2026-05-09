@@ -412,6 +412,41 @@ function ReviewPanel({
   );
 }
 
+// ── Already voted locked screen ──────────────────────────────────────────────
+function AlreadyVotedScreen({ onLogout }: { onLogout: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="flex flex-col items-center text-center px-6 max-w-sm mx-auto py-16"
+    >
+      <div
+        className="w-16 h-16 flex items-center justify-center mb-6 flex-shrink-0"
+        style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+      >
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M6 14l6 6 10-12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <h2 className="text-xl font-bold text-white mb-2">You&apos;ve already voted</h2>
+      <p className="text-sm mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+        Your votes for the MTU Student Choice Awards 2026 have been recorded.
+      </p>
+      <p className="text-sm mb-10" style={{ color: "rgba(255,255,255,0.22)" }}>
+        Each student can only vote once. Results will be announced soon.
+      </p>
+      <button
+        onClick={onLogout}
+        className="px-6 py-2.5 text-xs font-mono tracking-widest text-white transition-opacity hover:opacity-75"
+        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}
+      >
+        END SESSION
+      </button>
+    </motion.div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function VotePage() {
   const router = useRouter();
@@ -423,6 +458,16 @@ export default function VotePage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
+  });
+
+  const { data: voteStatus, isLoading: voteStatusLoading } = useQuery({
+    queryKey: ["vote-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/vote/status");
+      if (!res.ok) return { hasVoted: false, voteCount: 0 };
+      return res.json() as Promise<{ hasVoted: boolean; voteCount: number }>;
+    },
+    staleTime: Infinity,
   });
 
   const categories = useMemo(() => data ?? [], [data]);
@@ -453,7 +498,7 @@ export default function VotePage() {
       }
       return res.json();
     },
-    onSuccess: () => { clearAll(); router.replace("/success"); },
+    onSuccess: (_data, votes) => { clearAll(); router.replace(`/success?votes=${votes.length}`); },
   });
 
   const getCategoryStatus = (catId: string, index: number): "voted" | "skipped" | "active" | "unvisited" => {
@@ -699,7 +744,7 @@ export default function VotePage() {
       {/* ── Main content ── */}
       <main className="flex-1 h-full overflow-y-auto relative z-10 pt-16 lg:pt-0">
         <div className="min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        {isLoading && (
+        {(isLoading || voteStatusLoading) && (
           <div className="flex items-center justify-center w-full py-32">
             <div
               className="w-8 h-8 border-2 rounded-full animate-spin"
@@ -708,14 +753,18 @@ export default function VotePage() {
           </div>
         )}
 
-        {isError && (
+        {!isLoading && !voteStatusLoading && isError && (
           <div className="w-full max-w-lg mt-8 p-8 text-center" style={GLASS}>
             <p className="text-sm font-semibold text-white mb-1">Unable to load categories</p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Please refresh and try again.</p>
           </div>
         )}
 
-        {!isLoading && !isError && categories.length > 0 && (
+        {!isLoading && !voteStatusLoading && !isError && voteStatus?.hasVoted && (
+          <AlreadyVotedScreen onLogout={handleLogout} />
+        )}
+
+        {!isLoading && !voteStatusLoading && !isError && !voteStatus?.hasVoted && categories.length > 0 && (
           <div className="w-full max-w-3xl pb-8">
             <AnimatePresence mode="wait">
               {reviewMode ? (
